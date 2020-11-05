@@ -11,7 +11,7 @@
 ===========================================================================
 The MIT License
 
-Copyright (c) 2019-2020 Gabriel Felipe. https://github.com/dasilvagf
+Copyright (c) 2020 Gabriel Felipe. https://github.com/dasilvagf
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -85,6 +85,7 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		// 3 - Pixel Processing
 
 		// 4 - Output/Merger (Presentation)
+		InvalidateRect(sb->hwnd, NULL, 1u);
 	}
 
 	CloseWin32(sb);

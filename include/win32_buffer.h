@@ -47,15 +47,12 @@ THE SOFTWARE.
 typedef struct SurfaceBuffer_t
 {
 	uint32_t width, height;
-	uint32_t* pixel_buffers[2]; // double-buffering
+	uint32_t* surface_buffer[2]; // double-buffering
 
 	// Win32/GDI specific
 	HWND hwnd;
 	BITMAPINFO bminfo;
 }SurfaceBuffer;
-
-static uint32_t* surface_buffer0;
-static uint32_t* surface_buffer1;
 
 SurfaceBuffer* InitWin32(uint32_t width, uint32_t height, HINSTANCE hinstance);
 void CloseWin32(SurfaceBuffer* sb);

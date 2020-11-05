@@ -11,7 +11,7 @@
 ===========================================================================
 The MIT License
 
-Copyright (c) 2019-2020 Gabriel Felipe. https://github.com/dasilvagf
+Copyright (c) 2020 Gabriel Felipe. https://github.com/dasilvagf
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,22 +42,33 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	    {
+			case WM_CREATE:
+			{
+				// Get our initial data passed via CreateWindow and made it our
+				// additional window data
+				SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)((CREATESTRUCT*)lParam)->lpCreateParams);
+			}break;
 			case WM_DESTROY: PostQuitMessage(0); break;
 			case WM_KEYDOWN:
 			{
 				if (wParam == VK_ESCAPE)
 					PostQuitMessage(0);
 			}break;
-			/*
 			case WM_PAINT:
 			{
+				// Get our surface data
+				SurfaceBuffer* sb = (SurfaceBuffer*) GetWindowLongPtr(hwnd, GWLP_USERDATA);
+				assert(sb);
 
-				StretchDIBits(pbuffer->hdc, pbuffer->width, pbuffer->height, 0, 0,
-							pbuffer->width, pbuffer->height, 0, 0, (void*)pbuffer->pixels,
-							&pbuffer->bminfo, DIB_RGB_COLORS, SRCCOPY);
+				PAINTSTRUCT ps;
+				HDC hdc = BeginPaint(hwnd, &ps);
+
+				StretchDIBits(hdc, sb->width, sb->height, 0, 0, sb->width, sb->height, 0, 0,
+						(void*)sb->surface_buffer[0], &sb->bminfo, DIB_RGB_COLORS, SRCCOPY);
+
+				EndPaint(hwnd, &ps);
 
 			}break;
-			*/
 	        default:
 	            return DefWindowProc(hwnd, uMsg, wParam, lParam);
 	    }
@@ -75,27 +86,23 @@ SurfaceBuffer* InitWin32(uint32_t width, uint32_t height, HINSTANCE hinstance)
 	wndc.lpszClassName = "raster-engine";
 	assert(RegisterClassExA(&wndc));
 
-	// Double Buffering
-	// NOTE: width x height is a little bit bigger than the actual width x height
-	uint32_t* d_buffering[2];
-	d_buffering[0] = (uint32_t*) malloc(width*height*0x4);
-	d_buffering[1] = (uint32_t*) malloc(width*height*0x4);
+	// The SurfaceBuffer structure representing the window surface
+	SurfaceBuffer* sb = (SurfaceBuffer*) malloc(sizeof(SurfaceBuffer));
 
+	// Create the window and pass our surface buffer, so the window callback can updated the screen-area
+	// with out back-buffer
 	HWND hwnd = CreateWindowExA(0, wndc.lpszClassName, "Raster Engine", WS_OVERLAPPED | WS_VISIBLE,
 			CW_USEDEFAULT, CW_USEDEFAULT, (int32_t)width, (int32_t)height, NULL,
-			NULL, hinstance, NULL);
+			NULL, hinstance, (void*)sb);
 	assert(hwnd);
 
 	// True width x height
 	RECT rect;
 	GetClientRect(hwnd, &rect);
-
-	// The SurfaceBuffer structure representing the window surface
-	SurfaceBuffer* sb = (SurfaceBuffer*) malloc(sizeof(SurfaceBuffer));
 	sb->width = (uint32_t) rect.right;
 	sb->height = (uint32_t) rect.bottom;
-	sb->pixel_buffers[0] = d_buffering[0];
-	sb->pixel_buffers[1] = d_buffering[1];
+	sb->surface_buffer[0] = (uint32_t*) malloc(sb->width*sb->height*0x4);
+	sb->surface_buffer[1] = (uint32_t*) malloc(sb->width*sb->height*0x4);
 
 	// GDI Specific Info
 	BITMAPINFOHEADER bmh = {};
@@ -114,12 +121,11 @@ SurfaceBuffer* InitWin32(uint32_t width, uint32_t height, HINSTANCE hinstance)
 
 void CloseWin32(SurfaceBuffer* sb)
 {
-	if (sb && sb->pixel_buffers[0] && sb->pixel_buffers[1])
+	if (sb && sb->surface_buffer[0] && sb->surface_buffer[1])
 	{
-		free(sb->pixel_buffers[0]);
-		free(sb->pixel_buffers[1]);
+		free(sb->surface_buffer[0]);
+		free(sb->surface_buffer[1]);
 
 		free(sb);
 	}
 }
-
