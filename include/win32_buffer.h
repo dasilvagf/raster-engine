@@ -47,7 +47,7 @@ THE SOFTWARE.
 typedef struct SurfaceBuffer_t
 {
 	uint32_t width, height;
-	uint32_t* surface_buffer[2]; // double-buffering
+	uint32_t* surface_buffer;
 
 	// Win32/GDI specific
 	HWND hwnd;

@@ -86,6 +86,7 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		// 4 - Output/Merger (Presentation)
 		InvalidateRect(sb->hwnd, NULL, 1u);
+		UpdateWindow(sb->hwnd);
 	}
 
 	CloseWin32(sb);
