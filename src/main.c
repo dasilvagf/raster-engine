@@ -35,6 +35,7 @@ THE SOFTWARE.
 
 
 #include "../include/win32_buffer.h"
+#include "../include/raster_stage.h"
 
 #define WINDOW_WIDTH 1024u
 #define WINDOW_HEIGHT 640u
@@ -81,6 +82,7 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		// 1 - Vertex Processing
 
 		// 2 - Rasterization
+		RasterTriangles(sb);
 
 		// 3 - Pixel Processing
 

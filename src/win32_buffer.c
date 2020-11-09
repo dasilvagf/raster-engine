@@ -64,7 +64,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				HDC hdc = BeginPaint(hwnd, &ps);
 
 				assert(
-				StretchDIBits(hdc, sb->width, sb->height, 0, 0, sb->width, sb->height, 0, 0,
+				StretchDIBits(hdc, 0, 0, sb->width, sb->height, 0, 0, sb->width, sb->height,
 						(void*)sb->surface_buffer, &sb->bminfo, DIB_RGB_COLORS, SRCCOPY));
 
 				EndPaint(hwnd, &ps);

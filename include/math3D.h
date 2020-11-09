@@ -7,11 +7,11 @@
                        \    /        /
                         \  /        /
                          \/________/
-     - RASTER ENGINE					utils.h
+     - RASTER ENGINE					math3D.h
 ===========================================================================
 The MIT License
 
-Copyright (c) 2019-2020 Gabriel Felipe. https://github.com/dasilvagf
+Copyright (c) 2020 Gabriel Felipe. https://github.com/dasilvagf
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,12 +33,16 @@ THE SOFTWARE.
 
 */
 
-#ifndef INCLUDE_UTILS_H_
-#define INCLUDE_UTILS_H_
+#ifndef INCLUDE_MATH3D_H_
+#define INCLUDE_MATH3D_H_
 
-#include <assert.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <time.h>
+#include <math.h>
+#include <immintrin.h>
 
-#endif /* INCLUDE_UTILS_H_ */
+typedef struct Vec2_t
+{
+		float x, y;
+}Vec2;
+
+
+#endif /* INCLUDE_MATH3D_H_ */

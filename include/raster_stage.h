@@ -7,11 +7,11 @@
                        \    /        /
                         \  /        /
                          \/________/
-     - RASTER ENGINE					utils.h
+     - RASTER ENGINE					raster_stage.h
 ===========================================================================
 The MIT License
 
-Copyright (c) 2019-2020 Gabriel Felipe. https://github.com/dasilvagf
+Copyright (c) 2020 Gabriel Felipe. https://github.com/dasilvagf
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,12 +33,12 @@ THE SOFTWARE.
 
 */
 
-#ifndef INCLUDE_UTILS_H_
-#define INCLUDE_UTILS_H_
+#ifndef _INCLUDE_RASTER_STAGE_H_
+#define _INCLUDE_RASTER_STAGE_H_
 
-#include <assert.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <time.h>
+#include "win32_buffer.h"
+#include "math3D.h"
 
-#endif /* INCLUDE_UTILS_H_ */
+void RasterTriangles(SurfaceBuffer* sb);
+
+#endif

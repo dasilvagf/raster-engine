@@ -7,11 +7,11 @@
                        \    /        /
                         \  /        /
                          \/________/
-     - RASTER ENGINE					utils.h
+     - RASTER ENGINE					raster_stage.c
 ===========================================================================
 The MIT License
 
-Copyright (c) 2019-2020 Gabriel Felipe. https://github.com/dasilvagf
+Copyright (c) 2020 Gabriel Felipe. https://github.com/dasilvagf
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,12 +33,21 @@ THE SOFTWARE.
 
 */
 
-#ifndef INCLUDE_UTILS_H_
-#define INCLUDE_UTILS_H_
+#include "../include/raster_stage.h"
 
-#include <assert.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <time.h>
+void RasterTriangles(SurfaceBuffer* sb)
+{
+	// JUST FOR TEST
+	for(uint32_t j = 0u; j < sb->height; ++j){
 
-#endif /* INCLUDE_UTILS_H_ */
+		uint8_t randR = rand() % 255;
+		uint8_t randG = rand() % 255;
+		uint8_t randB = rand() % 255;
+
+		uint32_t rand_color = randR << 24 | randG << 16 | randB << 8 | 0xFF;
+		for(uint32_t i = 0u; i < sb->width; ++i)
+			sb->surface_buffer[j*sb->width + i] = rand_color;
+	}
+
+	// Loop (4 each time) SSE3 SIMD lanes
+}
