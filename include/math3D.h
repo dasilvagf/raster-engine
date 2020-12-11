@@ -39,10 +39,49 @@ THE SOFTWARE.
 #include <math.h>
 #include <immintrin.h>
 
+//
+//	Definitions
+//
+
 typedef struct Vec2_t
 {
 		float x, y;
 }Vec2;
 
+typedef struct BB_t
+{
+	Vec2 p0, p1;
+}BB;
+
+typedef struct Triangle_t
+{
+	Vec2 p0, p1, p2;
+	BB triBB;
+}Triangle;
+
+//
+//	Utils
+//
+
+static inline float min_f(float a, float b)
+{
+	return (a <= b) ? a : b;
+}
+
+static inline float max_f(float a, float b)
+{
+	return (a >= b) ? a : b;
+}
+
+static inline void GenerateBoundingBoxForTriangle(Triangle* t)
+{
+	/*
+	t->triBB.p0.x = min_f(min_f(t->p0.x, t->p1.x), t->p2.x);
+	t->triBB.p0.y = min_f(min_f(t->p0.y, t->p1.y), t->p2.y);
+
+	t->triBB.p1.x = max_f(max_f(t->p0.x, t->p1.x), t->p2.x);
+	t->triBB.p1.y = max_f(max_f(t->p0.y, t->p1.y), t->p2.y);
+	*/
+}
 
 #endif /* INCLUDE_MATH3D_H_ */

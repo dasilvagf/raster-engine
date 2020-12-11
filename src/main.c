@@ -36,6 +36,7 @@ THE SOFTWARE.
 
 #include "../include/win32_buffer.h"
 #include "../include/raster_stage.h"
+#include "../include/math3D.h"
 
 #define WINDOW_WIDTH 1024u
 #define WINDOW_HEIGHT 640u
@@ -73,20 +74,43 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			}
 		}
 
-		//
+		// ----------------------------------------------
 		// Rendering Pipeline (Direct3D9 Level)
+		// ----------------------------------------------
+
+		//
+		// 0 - Input Assembler (IA)
 		//
 
-		// 0 - Input Assembler (IA)
-
+		//
 		// 1 - Vertex Processing
+		//
 
+		// Triangles Buffer
+		uint32_t n_triangles = 1u;
+		Triangle* tb = (Triangle*) malloc(sizeof(Triangle)*n_triangles);
+
+		// test triangle
+		tb[0].p0.x =  5.0f;  tb[0].p0.y = 5.0f;
+		tb[0].p1.x = 20.0f;  tb[0].p1.y = 20.0f;
+		tb[0].p2.x = 50.0f;  tb[0].p2.y = 50.0f;
+		//GenerateBoundingBoxForTriangle(&tb[0]);
+
+		float a = max_f(-10.0f, 0.0f);
+
+		//
 		// 2 - Rasterization
-		RasterTriangles(sb);
+		//
+		RasterTriangles(sb, tb, n_triangles);
 
+
+		//
 		// 3 - Pixel Processing
+		//
 
+		//
 		// 4 - Output/Merger (Presentation)
+		//
 		InvalidateRect(sb->hwnd, NULL, 1u);
 		UpdateWindow(sb->hwnd);
 	}

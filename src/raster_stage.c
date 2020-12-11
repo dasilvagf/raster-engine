@@ -35,8 +35,11 @@ THE SOFTWARE.
 
 #include "../include/raster_stage.h"
 
-void RasterTriangles(SurfaceBuffer* sb)
+void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 {
+
+
+
 	// JUST FOR TEST
 	for(uint32_t j = 0u; j < sb->height; ++j){
 

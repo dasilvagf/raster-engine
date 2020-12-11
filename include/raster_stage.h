@@ -39,6 +39,6 @@ THE SOFTWARE.
 #include "win32_buffer.h"
 #include "math3D.h"
 
-void RasterTriangles(SurfaceBuffer* sb);
+void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size);
 
 #endif
