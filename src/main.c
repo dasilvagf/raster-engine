@@ -87,16 +87,21 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		//
 
 		// Triangles Buffer
-		uint32_t n_triangles = 1u;
+		uint32_t n_triangles = 2u;
 		Triangle* tb = (Triangle*) malloc(sizeof(Triangle)*n_triangles);
 
 		// test triangle
-		tb[0].p0.x =  5.0f;  tb[0].p0.y = 5.0f;
-		tb[0].p1.x = 20.0f;  tb[0].p1.y = 20.0f;
-		tb[0].p2.x = 50.0f;  tb[0].p2.y = 50.0f;
-		//GenerateBoundingBoxForTriangle(&tb[0]);
+		tb[0].p0.x = 10.0f;  tb[0].p0.y = 10.0f;
+		tb[0].p1.x = 100.0f;  tb[0].p1.y = 10.0f;
+		tb[0].p2.x = 70.0f;  tb[0].p2.y = 100.0f;
 
-		float a = max_f(-10.0f, 0.0f);
+		GenerateBoundingBoxForTriangle(&tb[0]);
+
+		tb[1].p0.x = 100.0f; tb[1].p0.y = 10.0f;
+		tb[1].p1.x = 200.0f;  tb[1].p1.y = 60.0f;
+		tb[1].p2.x = 70.0f;  tb[1].p2.y = 100.0f;
+
+		GenerateBoundingBoxForTriangle(&tb[1]);
 
 		//
 		// 2 - Rasterization

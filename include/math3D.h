@@ -75,13 +75,11 @@ static inline float max_f(float a, float b)
 
 static inline void GenerateBoundingBoxForTriangle(Triangle* t)
 {
-	/*
 	t->triBB.p0.x = min_f(min_f(t->p0.x, t->p1.x), t->p2.x);
 	t->triBB.p0.y = min_f(min_f(t->p0.y, t->p1.y), t->p2.y);
 
 	t->triBB.p1.x = max_f(max_f(t->p0.x, t->p1.x), t->p2.x);
 	t->triBB.p1.y = max_f(max_f(t->p0.y, t->p1.y), t->p2.y);
-	*/
 }
 
 #endif /* INCLUDE_MATH3D_H_ */
