@@ -86,6 +86,7 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		// 1 - Vertex Processing
 		//
 
+		/*
 		// Triangles Buffer
 		uint32_t n_triangles = 2u;
 		Triangle* tb = (Triangle*) malloc(sizeof(Triangle)*n_triangles);
@@ -103,10 +104,15 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		GenerateBoundingBoxForTriangle(&tb[1]);
 
+		*/
+
+		Vec2 center = {612.0f, 320.0f};
+		StarPolygon* star = CreateStarPolygon(100.0f, center);
+
 		//
 		// 2 - Rasterization
 		//
-		RasterTriangles(sb, tb, n_triangles);
+		RasterTriangles(sb, star->triangles, star->n_triangles);
 
 
 		//
