@@ -77,8 +77,8 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			for (uint32_t j = x_min; j < x_max; ++j){
 
 				// Point being rasterized
-				float px = j + 0.5f;
-				float py = i - 0.5f;
+				float px = j; //+ 0.5f;
+				float py = i; //- 0.5f;
 
 				//
 				// Edge Functions
@@ -95,6 +95,7 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 
 				if (e0 >= 0.0f && e1 >= 0.0f && e2 >= 0.0f)
 				{
+
 					//
 					// Left-Bottom Edge Rule
 					//
@@ -106,6 +107,7 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 						sb->surface_buffer[(sb->height - i)*sb->width + j] = rand_color;
 					else
 						sb->surface_buffer[(sb->height - i)*sb->width + j] = rand_color;
+
 				}
 
 			}

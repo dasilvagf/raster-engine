@@ -41,4 +41,15 @@ THE SOFTWARE.
 #include <stdlib.h>
 #include <time.h>
 
+#include "math3D.h"
+
+typedef struct StarPolygon_t
+{
+	Triangle* triangles;
+	uint32_t n_triangles;
+}StarPolygon;
+
+StarPolygon* CreateZeldaTriForcePolygon(float side_length, Vec2 center);
+StarPolygon* CreateStarPolygon(float side_length, Vec2 center);
+
 #endif /* INCLUDE_UTILS_H_ */

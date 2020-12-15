@@ -33,6 +33,12 @@ THE SOFTWARE.
 
 */
 
+#ifdef _DEBUG
+#define WINDOW_NAME "Raster Engine - DEBUG"
+#else
+#define WINDOW_NAME "Raster Engine - RELEASE"
+#endif
+
 #include "../include/win32_buffer.h"
 
 //
@@ -53,6 +59,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			{
 				if (wParam == VK_ESCAPE)
 					PostQuitMessage(0);
+				if (wParam == VK_LEFT)
+					dx -= default_ds;
+				if (wParam == VK_RIGHT)
+					dx += default_ds;
 			}break;
 			case WM_PAINT:
 			{
@@ -78,6 +88,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 SurfaceBuffer* InitWin32(uint32_t width, uint32_t height, HINSTANCE hinstance)
 {
+	dx = 0.0f;
+	dy = 0.0f;
+
 	// Basic Window Element Class Registration
 	WNDCLASSEXA wndc = {};
 	wndc.cbSize = sizeof(WNDCLASSEXA);
@@ -92,7 +105,7 @@ SurfaceBuffer* InitWin32(uint32_t width, uint32_t height, HINSTANCE hinstance)
 
 	// Create the window and pass our surface buffer, so the window callback can updated the screen-area
 	// with out back-buffer
-	HWND hwnd = CreateWindowExA(0, wndc.lpszClassName, "Raster Engine", WS_OVERLAPPED | WS_VISIBLE,
+	HWND hwnd = CreateWindowExA(0, wndc.lpszClassName, WINDOW_NAME, WS_OVERLAPPED | WS_VISIBLE,
 			CW_USEDEFAULT, CW_USEDEFAULT, (int32_t)width, (int32_t)height, NULL,
 			NULL, hinstance, (void*)sb);
 	assert(hwnd);

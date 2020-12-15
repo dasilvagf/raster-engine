@@ -51,12 +51,20 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	SurfaceBuffer* sb = InitWin32(WINDOW_WIDTH, WINDOW_HEIGHT, hInstance);
 	uint32_t running = 1u;
 
+	LARGE_INTEGER cpu_frequency; QueryPerformanceFrequency(&cpu_frequency);
+	float second_tick = 1.0f/cpu_frequency.QuadPart;
+
+	LARGE_INTEGER t0, t1;
+	QueryPerformanceFrequency(&t1);
+
 	//
 	// Pipeline Initialisation
 	//
 
 	while(running)
 	{
+		t0 = t1;
+
 		//
 		// Process OS Stuff
 		//
@@ -65,8 +73,8 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		{
 			switch(msg.message)
 			{
-			case WM_QUIT: running = 0u; break;
-			default:
+			 case WM_QUIT: running = 0u; break;
+			 default:
 				{
 					TranslateMessage(&msg);
 					DispatchMessage(&msg);
@@ -106,7 +114,7 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		*/
 
-		Vec2 center = {612.0f, 320.0f};
+		Vec2 center = {612.7773f + dx, 320.129f};
 		StarPolygon* star = CreateStarPolygon(100.0f, center);
 
 		//
@@ -124,6 +132,13 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		//
 		InvalidateRect(sb->hwnd, NULL, 1u);
 		UpdateWindow(sb->hwnd);
+
+		QueryPerformanceCounter(&t1);
+		float elapsed_ms = 1000.0f*second_tick*(t1.QuadPart - t0.QuadPart);
+		printf("Frame Time (ms): %f\n", elapsed_ms);
+
+		free(star->triangles);
+		free(star);
 	}
 
 	CloseWin32(sb);

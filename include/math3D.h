@@ -48,10 +48,22 @@ typedef struct Vec2_t
 		float x, y;
 }Vec2;
 
+typedef struct Vec3_t
+{
+		float x, y, z;
+}Vec3;
+
 typedef struct BB_t
 {
 	Vec2 p0, p1;
 }BB;
+
+typedef struct Vertex
+{
+	Vec3 position;
+	Vec3 color;
+	Vec2 texcoord;
+}Vertex;
 
 typedef struct Triangle_t
 {
@@ -60,7 +72,7 @@ typedef struct Triangle_t
 }Triangle;
 
 //
-//	Utils
+//	Math Utils
 //
 
 static inline float min_f(float a, float b)
@@ -81,136 +93,5 @@ static inline void GenerateBoundingBoxForTriangle(Triangle* t)
 	t->triBB.p1.x = max_f(max_f(t->p0.x, t->p1.x), t->p2.x);
 	t->triBB.p1.y = max_f(max_f(t->p0.y, t->p1.y), t->p2.y);
 }
-
-typedef struct StarPolygon_t
-{
-	Triangle* triangles;
-	uint32_t n_triangles;
-}StarPolygon;
-
-static inline StarPolygon* ZeldaTriForcePolygon(float side_length, Vec2 center)
-{
-		float h = (sqrt(3.0f)/2.0f)*side_length;
-		float l = side_length;
-
-		StarPolygon* star = (StarPolygon*) malloc(sizeof(StarPolygon));
-		star->n_triangles = 3;
-		star->triangles = (Triangle*) malloc(3*sizeof(Triangle));
-
-		Triangle t_tmp;
-
-		// triangle 0
-		t_tmp.p0.x = center.x - l/2.0f;
-		t_tmp.p0.y = center.y + h;
-		t_tmp.p1.x = center.x + l/2.0f;
-		t_tmp.p1.y = center.y + h;
-		t_tmp.p2.x = center.x;
-		t_tmp.p2.y = center.y + 2.0f*h;
-		GenerateBoundingBoxForTriangle(&t_tmp);
-		star->triangles[0] = t_tmp;
-
-		// triangle 1
-		t_tmp.p0.x = center.x - l;
-		t_tmp.p0.y = center.y;
-		t_tmp.p1.x = center.x;
-		t_tmp.p1.y = center.y;
-		t_tmp.p2.x = center.x - l/2.0f;
-		t_tmp.p2.y = center.y + h;
-		GenerateBoundingBoxForTriangle(&t_tmp);
-		star->triangles[1] = t_tmp;
-
-		// triangle 2
-		t_tmp.p0.x = center.x;
-		t_tmp.p0.y = center.y;
-		t_tmp.p1.x = center.x + l;
-		t_tmp.p1.y = center.y;
-		t_tmp.p2.x = center.x + l/2.0f;
-		t_tmp.p2.y = center.y + h;
-		GenerateBoundingBoxForTriangle(&t_tmp);
-		star->triangles[2] = t_tmp;
-
-		return star;
-}
-
-static inline StarPolygon* CreateStarPolygon(float side_length, Vec2 center)
-{
-	float h = (sqrt(3.0f)/2.0f)*side_length;
-	float l = side_length;
-
-	StarPolygon* star = (StarPolygon*) malloc(sizeof(StarPolygon));
-	star->n_triangles = 6;
-	star->triangles = (Triangle*) malloc(12*sizeof(Triangle));
-
-	//
-	// Create Up-Side Triangles
-	//
-	Triangle t_tmp;
-
-	// triangle 0
-	t_tmp.p0.x = center.x - l/2.0f;
-	t_tmp.p0.y = center.y + h;
-	t_tmp.p1.x = center.x + l/2.0f;
-	t_tmp.p1.y = center.y + h;
-	t_tmp.p2.x = center.x;
-	t_tmp.p2.y = center.y + 2.0f*h;
-	GenerateBoundingBoxForTriangle(&t_tmp);
-	star->triangles[0] = t_tmp;
-
-	// triangle 1
-	t_tmp.p0.x = center.x - l;
-	t_tmp.p0.y = center.y;
-	t_tmp.p1.x = center.x;
-	t_tmp.p1.y = center.y;
-	t_tmp.p2.x = center.x - l/2.0f;
-	t_tmp.p2.y = center.y + h;
-	GenerateBoundingBoxForTriangle(&t_tmp);
-	star->triangles[1] = t_tmp;
-
-	// triangle 2
-	t_tmp.p0.x = center.x;
-	t_tmp.p0.y = center.y;
-	t_tmp.p1.x = center.x + l;
-	t_tmp.p1.y = center.y;
-	t_tmp.p2.x = center.x + l/2.0f;
-	t_tmp.p2.y = center.y + h;
-	GenerateBoundingBoxForTriangle(&t_tmp);
-	star->triangles[2] = t_tmp;
-
-	// triangle 3
-	t_tmp.p0.x = center.x - (l/2.0f + l);
-	t_tmp.p0.y = center.y - h;
-	t_tmp.p1.x = center.x - l/2.0f;
-	t_tmp.p1.y = center.y - h;
-	t_tmp.p2.x = center.x - l;
-	t_tmp.p2.y = center.y;
-	GenerateBoundingBoxForTriangle(&t_tmp);
-	star->triangles[3] = t_tmp;
-
-	// triangle 4
-	t_tmp.p0.x = center.x - l/2.0f;
-	t_tmp.p0.y = center.y - h;
-	t_tmp.p1.x = center.x + l/2.0f;
-	t_tmp.p1.y = center.y - h;
-	t_tmp.p2.x = center.x;
-	t_tmp.p2.y = center.y;
-	GenerateBoundingBoxForTriangle(&t_tmp);
-	star->triangles[4] = t_tmp;
-
-	// triangle 5
-	t_tmp.p0.x = center.x + l/2.0f;
-	t_tmp.p0.y = center.y - h;
-	t_tmp.p1.x = center.x + l + l/2.0f;
-	t_tmp.p1.y = center.y - h;
-	t_tmp.p2.x = center.x + l;
-	t_tmp.p2.y = center.y;
-	GenerateBoundingBoxForTriangle(&t_tmp);
-	star->triangles[5] = t_tmp;
-
-
-	// Create Down-Side Triangles
-
-	return star;
-}
-
 
 #endif /* INCLUDE_MATH3D_H_ */
