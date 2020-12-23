@@ -33,6 +33,7 @@ THE SOFTWARE.
 
 */
 
+#include <stdio.h>
 
 #include "../include/win32_buffer.h"
 #include "../include/raster_stage.h"
@@ -57,6 +58,9 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	LARGE_INTEGER t0, t1;
 	QueryPerformanceFrequency(&t1);
 
+	float dx = 0.0f;
+	float dy = 0.0f;
+
 	//
 	// Pipeline Initialisation
 	//
@@ -74,11 +78,23 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			switch(msg.message)
 			{
 			 case WM_QUIT: running = 0u; break;
+			 case WM_KEYDOWN:
+				 {
+					if (msg.wParam == VK_LEFT)
+						dx -= 10.0f;
+					else if (msg.wParam == VK_RIGHT)
+						dx += 10.0f;
+					else if (msg.wParam == VK_UP)
+						dy += 10.0f;
+					else if (msg.wParam == VK_DOWN)
+						dy -= 10.0f;
+				 }
 			 default:
 				{
 					TranslateMessage(&msg);
 					DispatchMessage(&msg);
 				}
+			 
 			}
 		}
 
@@ -94,27 +110,7 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		// 1 - Vertex Processing
 		//
 
-		/*
-		// Triangles Buffer
-		uint32_t n_triangles = 2u;
-		Triangle* tb = (Triangle*) malloc(sizeof(Triangle)*n_triangles);
-
-		// test triangle
-		tb[0].p0.x = 10.0f;  tb[0].p0.y = 10.0f;
-		tb[0].p1.x = 100.0f;  tb[0].p1.y = 10.0f;
-		tb[0].p2.x = 70.0f;  tb[0].p2.y = 100.0f;
-
-		GenerateBoundingBoxForTriangle(&tb[0]);
-
-		tb[1].p0.x = 100.0f; tb[1].p0.y = 10.0f;
-		tb[1].p1.x = 200.0f;  tb[1].p1.y = 60.0f;
-		tb[1].p2.x = 70.0f;  tb[1].p2.y = 100.0f;
-
-		GenerateBoundingBoxForTriangle(&tb[1]);
-
-		*/
-
-		Vec2 center = {612.7773f + dx, 320.129f};
+		Vec2 center = {612.7773f + dx, 320.129f + dy};
 		StarPolygon* star = CreateStarPolygon(100.0f, center);
 
 		//
@@ -130,13 +126,19 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		//
 		// 4 - Output/Merger (Presentation)
 		//
+
+		// Compute Time to Compute Frame (ms)
+		QueryPerformanceCounter(&t1);
+		float elapsed_ms = 1000.0f * second_tick * (t1.QuadPart - t0.QuadPart);
+		
+		char* debug_string[256];
+		sprintf(debug_string, "RASTER ENGINE | frame time %f (ms)", elapsed_ms);
+		SetWindowText(sb->hwnd, debug_string);
+
+		// Swap Buffers
 		InvalidateRect(sb->hwnd, NULL, 1u);
 		UpdateWindow(sb->hwnd);
-
-		QueryPerformanceCounter(&t1);
-		float elapsed_ms = 1000.0f*second_tick*(t1.QuadPart - t0.QuadPart);
-		printf("Frame Time (ms): %f\n", elapsed_ms);
-
+		
 		free(star->triangles);
 		free(star);
 	}

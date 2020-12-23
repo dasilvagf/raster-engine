@@ -59,10 +59,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			{
 				if (wParam == VK_ESCAPE)
 					PostQuitMessage(0);
-				if (wParam == VK_LEFT)
-					dx -= default_ds;
-				if (wParam == VK_RIGHT)
-					dx += default_ds;
 			}break;
 			case WM_PAINT:
 			{
@@ -88,11 +84,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 SurfaceBuffer* InitWin32(uint32_t width, uint32_t height, HINSTANCE hinstance)
 {
-	dx = 0.0f;
-	dy = 0.0f;
-
 	// Basic Window Element Class Registration
-	WNDCLASSEXA wndc = {};
+	WNDCLASSEXA wndc; 
+	ZeroMemory(&wndc, sizeof(WNDCLASSEXA));
+
 	wndc.cbSize = sizeof(WNDCLASSEXA);
 	wndc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wndc.lpfnWndProc = WindowProc;
@@ -119,7 +114,7 @@ SurfaceBuffer* InitWin32(uint32_t width, uint32_t height, HINSTANCE hinstance)
 	//sb->surface_buffer[1] = (uint32_t*) malloc(sb->width*sb->height*0x4);
 
 	// GDI Specific Info
-	BITMAPINFOHEADER bmh = {};
+	BITMAPINFOHEADER bmh;
 	bmh.biSize = sizeof(BITMAPINFOHEADER);
 	bmh.biWidth = (int32_t)sb->width;
 	bmh.biHeight = -((int32_t)sb->height);
@@ -129,6 +124,7 @@ SurfaceBuffer* InitWin32(uint32_t width, uint32_t height, HINSTANCE hinstance)
 
 	sb->bminfo.bmiHeader = bmh;
 	sb->hwnd = hwnd;
+
 
 	return sb;
 }

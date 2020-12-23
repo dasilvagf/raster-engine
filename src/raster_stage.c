@@ -37,6 +37,12 @@ THE SOFTWARE.
 
 void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 {
+	// Clear Back Buffer
+	for (uint32_t i = 0u; i < sb->height; ++i) 
+		for (uint32_t j = 0u; j < sb->width; j += 4)
+				_mm_storeu_si128((__m128i*)&sb->surface_buffer[i*sb->width + j], 
+				_mm_setzero_si128());
+
 	// For each of our triangles
 	for (uint32_t t = 0u; t < tb_size; ++t){
 

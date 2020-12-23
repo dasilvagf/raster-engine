@@ -37,6 +37,8 @@ THE SOFTWARE.
 #define INCLUDE_WIN32_BUFFER_H_
 
 #include <Windows.h>
+#include <xmmintrin.h>
+
 #include "utils.h"
 
 //
@@ -56,10 +58,5 @@ typedef struct SurfaceBuffer_t
 
 SurfaceBuffer* InitWin32(uint32_t width, uint32_t height, HINSTANCE hinstance);
 void CloseWin32(SurfaceBuffer* sb);
-
-// TEMP: just for some tests
-static float dx;
-static float dy;
-static const float default_ds = 7.1f;
 
 #endif /* INCLUDE_WIN32_BUFFER_H_ */
