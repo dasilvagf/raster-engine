@@ -46,17 +46,13 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 	// For each of our triangles
 	for (uint32_t t = 0u; t < tb_size; ++t){
 
-		uint8_t randR = rand() % 255;
-		uint8_t randG = rand() % 255;
-		uint8_t randB = rand() % 255;
-
-		uint32_t rand_color = randR << 24 | randG << 16 | randB << 8 | 0xFF;
+		// Triangle Set-Up
 
 		// Traverse inside Bounding Box
-		uint32_t x_min = (uint32_t)tb[t].triBB.p0.x;
-		uint32_t y_min = (uint32_t)tb[t].triBB.p0.y;
-		uint32_t x_max = (uint32_t)tb[t].triBB.p1.x;
-		uint32_t y_max = (uint32_t)tb[t].triBB.p1.y;
+		uint32_t x_min = (uint32_t)roundf(tb[t].triBB.p0.x);
+		uint32_t y_min = (uint32_t)roundf(tb[t].triBB.p0.y);
+		uint32_t x_max = (uint32_t)roundf(tb[t].triBB.p1.x);
+		uint32_t y_max = (uint32_t)roundf(tb[t].triBB.p1.y);
 
 		//
 		// Edge Functions (Constants)
@@ -82,9 +78,9 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 		for (uint32_t i = y_max; i > y_min; --i){
 			for (uint32_t j = x_min; j < x_max; ++j){
 
-				// Point being rasterized
-				float px = j; //+ 0.5f;
-				float py = i; //- 0.5f;
+				// pixel center
+				float px = j + 0.5f; 
+				float py = i + 0.5f; 
 
 				//
 				// Edge Functions
@@ -99,23 +95,10 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 				// (P1 - P0)
 				float e2 = a2*px + b2*py + c2;
 
-				if (e0 >= 0.0f && e1 >= 0.0f && e2 >= 0.0f)
-				{
-
-					//
-					// Left-Bottom Edge Rule
-					//
-					if (e0 == 0.0f && (a0 > 0.0f))
-						sb->surface_buffer[(sb->height - i)*sb->width + j] = rand_color;
-					else if (e1 == 0.0f && a1 > 0.0f)
-						sb->surface_buffer[(sb->height - i)*sb->width + j] = rand_color;
-					else if (e2 == 0.0f && a2 > 0.0f)
-						sb->surface_buffer[(sb->height - i)*sb->width + j] = rand_color;
-					else
-						sb->surface_buffer[(sb->height - i)*sb->width + j] = rand_color;
-
-				}
-
+				if (e0 > 0.0f && e1 > 0.0f && e2 > 0.0f)
+					sb->surface_buffer[(sb->height - i) * sb->width + j] = 0xFFFFFFFF;
+				else if (e0 < 1.0f && e0 > 0.0f  && e1 < 1.0f && e1 > 0.0f && e2 < 1.0f && e2 > 0.0f)
+					sb->surface_buffer[(sb->height - i) * sb->width + j] = 0xFFFF0000;
 			}
 		}
 

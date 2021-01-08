@@ -81,13 +81,13 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			 case WM_KEYDOWN:
 				 {
 					if (msg.wParam == VK_LEFT)
-						dx -= 10.0f;
+						dx -= 10.777f;
 					else if (msg.wParam == VK_RIGHT)
-						dx += 10.0f;
+						dx += 10.777f;
 					else if (msg.wParam == VK_UP)
-						dy += 10.0f;
+						dy += 10.777f;
 					else if (msg.wParam == VK_DOWN)
-						dy -= 10.0f;
+						dy -= 10.777f;
 				 }
 			 default:
 				{
@@ -110,7 +110,7 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		// 1 - Vertex Processing
 		//
 
-		Vec2 center = {612.7773f + dx, 320.129f + dy};
+		Vec2 center = {612.0f + dx, 320.0f + dy};
 		StarPolygon* star = CreateStarPolygon(100.0f, center);
 
 		//
