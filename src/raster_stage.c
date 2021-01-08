@@ -46,8 +46,6 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 	// For each of our triangles
 	for (uint32_t t = 0u; t < tb_size; ++t){
 
-		// Triangle Set-Up
-
 		// Traverse inside Bounding Box
 		uint32_t x_min = (uint32_t)roundf(tb[t].triBB.p0.x);
 		uint32_t y_min = (uint32_t)roundf(tb[t].triBB.p0.y);
@@ -80,7 +78,7 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 
 				// pixel center
 				float px = j + 0.5f; 
-				float py = i + 0.5f; 
+				float py = i - 0.5f; 
 
 				//
 				// Edge Functions
@@ -95,10 +93,19 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 				// (P1 - P0)
 				float e2 = a2*px + b2*py + c2;
 
+				
+				//if (IsPixelInsideTriangle(e0, e1, e2, a0, a1, a2, b0, b1, b2))
+					//sb->surface_buffer[(sb->height - i) * sb->width + j] = 0xFFFFFFFF;
+					
+				// Check if sample point is inside the triangle
 				if (e0 > 0.0f && e1 > 0.0f && e2 > 0.0f)
 					sb->surface_buffer[(sb->height - i) * sb->width + j] = 0xFFFFFFFF;
-				else if (e0 < 1.0f && e0 > 0.0f  && e1 < 1.0f && e1 > 0.0f && e2 < 1.0f && e2 > 0.0f)
-					sb->surface_buffer[(sb->height - i) * sb->width + j] = 0xFFFF0000;
+				// Otherwise, check whether or not it lies in one of the edges
+				else if ((e0 == 0.0f && (a0 > 0.0f || b0 < 0.0f)) || 
+						 (e1 == 0.0f && (a1 > 0.0f || b1 < 0.0f)) || 
+						 (e2 == 0.0f && (a2 > 0.0f || b2 < 0.0f)))
+					sb->surface_buffer[(sb->height - i) * sb->width + j] = 0xFFFFFFFF;
+				
 			}
 		}
 
