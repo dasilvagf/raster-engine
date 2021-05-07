@@ -110,13 +110,27 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		// 1 - Vertex Processing
 		//
 
-		Vec2 center = {612.0f + dx, 320.0f + dy};
-		StarPolygon* star = CreateStarPolygon(100.0f, center);
+		// test triangle
+		Triangle t;
+
+		// position
+		Vec2 p0 = { 100.0f + dx, 100.0f + dy};
+		Vec2 p1 = {  50.0f + dx, 300.0f + dy};
+		Vec2 p2 = {   0.0f + dx, 100.0f + dy};
+
+		//color
+		Vec3 r = { 1.0f, 0.0f, 0.0f };
+		Vec3 g = { 0.0f, 1.0f, 0.0f };
+		Vec3 b = { 0.0f, 0.0f, 1.0f };
+		
+		t.p0 = p0; t.p1 = p1; t.p2 = p2;
+		t.c0 = r;  t.c1 = g;  t.c2 = b;
+		GenerateBoundingBoxForTriangle(&t);
 
 		//
 		// 2 - Rasterization
 		//
-		RasterTriangles(sb, star->triangles, star->n_triangles);
+		RasterTriangles(sb, &t, 1u);
 
 
 		//
@@ -138,9 +152,6 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		// Swap Buffers
 		InvalidateRect(sb->hwnd, NULL, 1u);
 		UpdateWindow(sb->hwnd);
-		
-		free(star->triangles);
-		free(star);
 	}
 
 	CloseWin32(sb);

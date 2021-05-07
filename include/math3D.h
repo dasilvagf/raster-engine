@@ -67,7 +67,10 @@ typedef struct Vertex
 
 typedef struct Triangle_t
 {
-	Vec2 p0, p1, p2;
+	Vec2 p0, p1, p2; // 2d pixel position
+	Vec3 c0, c1, c2; // color
+	Vec2 uv0, uv1, uv2; // (u,v) texture coordinates
+
 	BB triBB;
 }Triangle;
 
@@ -92,6 +95,11 @@ static inline void GenerateBoundingBoxForTriangle(Triangle* t)
 
 	t->triBB.p1.x = max_f(max_f(t->p0.x, t->p1.x), t->p2.x);
 	t->triBB.p1.y = max_f(max_f(t->p0.y, t->p1.y), t->p2.y);
+}
+
+static inline float OrientedTriangleArea(Vec2 a, Vec2 b, Vec2 c)
+{
+	return ((b.x - a.x)*(c.y - a.y) - (c.x - a.x)*(b.y - a.y))/2.0f;
 }
 
 #endif /* INCLUDE_MATH3D_H_ */

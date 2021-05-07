@@ -49,6 +49,16 @@ typedef struct StarPolygon_t
 	uint32_t n_triangles;
 }StarPolygon;
 
+static inline uint32_t rgb_float_to_uint32(Vec3 color_rgb)
+{
+    // ARGB
+    uint8_t r = (uint8_t)(color_rgb.x*0xFF);
+    uint8_t g = (uint8_t)(color_rgb.y*0xFF);
+    uint8_t b = (uint8_t)(color_rgb.z*0xFF);
+
+    return (uint32_t)(0xFF << 24 | r << 16 | g << 8 | b);
+}
+
 StarPolygon* CreateZeldaTriForcePolygon(float side_length, Vec2 center);
 StarPolygon* CreateStarPolygon(float side_length, Vec2 center);
 

@@ -43,19 +43,16 @@ static inline uint32_t IsPixelInsideTriangle(float e0, float e1, float e2,
     float a0, float a1, float a2, 
     float b0, float b1, float b2)
 {
-    if (e0 >= 0.0f && e1 >= 0.0f && e2 >= 0.0f)
-    {
-        if (e0 > 0.0f && e1 > 0.0f && e2 > 0.0f)
-            return 1u;
-        else if ((e0 == 0.0f && a0 > 0.0f && b0 < 0.0f) ||
-                 (e1 == 0.0f && a1 > 0.0f && b1 < 0.0f) ||
-                 (e2 == 0.0f && a2 > 0.0f && b2 < 0.0f))
-            return 1u;
-        else
-            return 0u;
-    }
-    else
-        return 0u;  
+    // Check if sample point is inside the triangle
+    if (e0 > 0.0f && e1 > 0.0f && e2 > 0.0f)
+        return 1u;
+    // Otherwise, check whether or not it lies in one of the edges
+    else if ((e0 == 0.0f && (a0 > 0.0f || b0 < 0.0f)) ||
+             (e1 == 0.0f && (a1 > 0.0f || b1 < 0.0f)) ||
+             (e2 == 0.0f && (a2 > 0.0f || b2 < 0.0f)))
+        return 1u;
+
+    return 0u;
 }
 
 void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size);
