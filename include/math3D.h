@@ -97,9 +97,14 @@ static inline void GenerateBoundingBoxForTriangle(Triangle* t)
 	t->triBB.p1.y = max_f(max_f(t->p0.y, t->p1.y), t->p2.y);
 }
 
+static inline float OrientedArea(Vec2 a, Vec2 b, Vec2 c)
+{
+	return ((b.x - a.x)*(c.y - a.y) - (c.x - a.x)*(b.y - a.y));
+}
+
 static inline float OrientedTriangleArea(Vec2 a, Vec2 b, Vec2 c)
 {
-	return ((b.x - a.x)*(c.y - a.y) - (c.x - a.x)*(b.y - a.y))/2.0f;
+	return OrientedArea(a, b, c) / 2.0f;
 }
 
 #endif /* INCLUDE_MATH3D_H_ */

@@ -46,11 +46,11 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 	// For each of our triangles
 	for (uint32_t t = 0u; t < tb_size; ++t){
 
-		// triangle Area
-		float tri_area = OrientedTriangleArea(tb[t].p0, tb[t].p1, tb[t].p2);
+		// triangle area (multipled by 2)
+		float tri_area2 = OrientedArea(tb[t].p0, tb[t].p1, tb[t].p2);
 		
 		// Back-Face culling (CCW is front)
-		if (tri_area > 0.0f)
+		if (tri_area2 > 0.0f)
 		{
 			// Traverse inside Bounding Box
 			uint32_t x_min = (uint32_t)roundf(tb[t].triBB.p0.x);
@@ -103,13 +103,13 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 					if (IsPixelInsideTriangle(e0, e1, e2, a0, a1, a2, b0, b1, b2))
 					{
 						// barycentric coordinates
-						float l0 = e0/tri_area;
-						float l1 = e1/tri_area;
+						float l0 = e0/(tri_area2);
+						float l1 = e1/(tri_area2);
 
 						// interpolate the color
-						float c_r = l0*(tb[t].c0.x - tb[t].c1.x) + l1*(tb[t].c1.x - tb[t].c0.x) + tb[t].c2.x;
-						float c_g = l0*(tb[t].c0.y - tb[t].c1.y) + l1*(tb[t].c1.y - tb[t].c0.y) + tb[t].c2.y;
-						float c_b = l0*(tb[t].c0.z - tb[t].c1.z) + l1*(tb[t].c1.z - tb[t].c0.z) + tb[t].c2.z;
+						float c_r = l0*(tb[t].c0.x - tb[t].c2.x) + l1*(tb[t].c1.x - tb[t].c2.x) + tb[t].c2.x;
+						float c_g = l0*(tb[t].c0.y - tb[t].c2.y) + l1*(tb[t].c1.y - tb[t].c2.y) + tb[t].c2.y;
+						float c_b = l0*(tb[t].c0.z - tb[t].c2.z) + l1*(tb[t].c1.z - tb[t].c2.z) + tb[t].c2.z;
 						Vec3 c = {c_r, c_g, c_b};
 
 						sb->surface_buffer[(sb->height - i) * sb->width + j] = rgb_float_to_uint32(c);
