@@ -77,6 +77,62 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			float b2 = tb[t].p1.x - tb[t].p0.x;
 			float c2 = tb[t].p0.x * (tb[t].p1.y - tb[t].p0.y) + tb[t].p0.y * -b2;
 
+			//
+			// Edge Functions
+			//
+
+			// (P2 - P1)
+			float e0 = a0*(x_min + 0.5f) + b0*(y_max - 0.5f) + c0;
+
+			// (P0 - P2)
+			float e1 = a1*(x_min + 0.5f) + b1*(y_max - 0.5f) + c1;
+
+			// (P1 - P0)
+			float e2 = a2*(x_min + 0.5f) + b2*(y_max - 0.5f) + c2;
+
+			// loop (4 each time) SSE SIMD lanes
+			for (uint32_t i = y_max; i > y_min; --i) {
+				
+				// start at the left of the bounding-box
+				float curr_e0 = e0;
+				float curr_e1 = e1;
+				float curr_e2 = e2;
+
+				for (uint32_t j = x_min; j < x_max; ++j) {
+
+					// rasterize
+					if (IsPixelInsideTriangle(curr_e0, curr_e1, curr_e2, a0, a1, a2, b0, b1, b2))
+					{
+						// barycentric coordinates
+						float l0 = curr_e0 / (tri_area2);
+						float l1 = curr_e1 / (tri_area2);
+
+						// interpolate the color
+						float c_r = l0 * (tb[t].c0.x - tb[t].c2.x) + l1 * (tb[t].c1.x - tb[t].c2.x) + tb[t].c2.x;
+						float c_g = l0 * (tb[t].c0.y - tb[t].c2.y) + l1 * (tb[t].c1.y - tb[t].c2.y) + tb[t].c2.y;
+						float c_b = l0 * (tb[t].c0.z - tb[t].c2.z) + l1 * (tb[t].c1.z - tb[t].c2.z) + tb[t].c2.z;
+						Vec3 c = { c_r, c_g, c_b };
+
+						sb->surface_buffer[(sb->height - i) * sb->width + j] = rgb_float_to_uint32(c);
+					}
+
+					// step edge functions in +x
+					curr_e0 += a0;
+					curr_e1 += a1;
+					curr_e2 += a2;
+				}
+
+				// step edge functions in -y
+				e0 -= b0;
+				e1 -= b1;
+				e2 -= b2;
+			}
+
+
+	
+
+			/*
+
 			// (The Scan-Line goes DOWN in Raster Coordinates)
 			// Loop (4 each time) SSE SIMD lanes
 			for (uint32_t i = y_max; i > y_min; --i) {
@@ -116,6 +172,8 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 					}
 				}
 			}
+
+			*/
 		}
 	}
 }
