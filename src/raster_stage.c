@@ -61,35 +61,113 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			//
 			// Edge Functions (Constants)
 			//
+			float a[4], b[4], c[4];
 
 			// (P2 - P1)
-			float a0 = tb[t].p1.y - tb[t].p2.y;
-			float b0 = tb[t].p2.x - tb[t].p1.x;
-			float c0 = tb[t].p1.x * (tb[t].p2.y - tb[t].p1.y) + tb[t].p1.y * -b0;
+			a[0] = tb[t].p1.y - tb[t].p2.y;
+			b[0] = tb[t].p2.x - tb[t].p1.x;
+			c[0] = tb[t].p1.x * (tb[t].p2.y - tb[t].p1.y) + tb[t].p1.y * -b[0];
 
 			// (P0 - P2)
-			float a1 = tb[t].p2.y - tb[t].p0.y;
-			float b1 = tb[t].p0.x - tb[t].p2.x;
-			float c1 = tb[t].p2.x * (tb[t].p0.y - tb[t].p2.y) + tb[t].p2.y * -b1;
+			a[1] = tb[t].p2.y - tb[t].p0.y;
+			b[1] = tb[t].p0.x - tb[t].p2.x;
+			c[1] = tb[t].p2.x * (tb[t].p0.y - tb[t].p2.y) + tb[t].p2.y * -b[1];
 
 			// (P1 - P0)
-			float a2 = tb[t].p0.y - tb[t].p1.y;
-			float b2 = tb[t].p1.x - tb[t].p0.x;
-			float c2 = tb[t].p0.x * (tb[t].p1.y - tb[t].p0.y) + tb[t].p0.y * -b2;
+			a[2] = tb[t].p0.y - tb[t].p1.y;
+			b[2] = tb[t].p1.x - tb[t].p0.x;
+			c[2] = tb[t].p0.x * (tb[t].p1.y - tb[t].p0.y) + tb[t].p0.y * -b[2];
+
+			a[3] = 0.0f;
+			b[3] = 0.0f;
+			c[3] = 0.0f;
 
 			//
 			// Edge Functions
 			//
+			float e[4], curr_edge[4];
 
 			// (P2 - P1)
-			float e0 = a0*(x_min + 0.5f) + b0*(y_max - 0.5f) + c0;
+			e[0] = a[0]*(x_min + 0.5f) + b[0]*(y_max - 0.5f) + c[0];
 
 			// (P0 - P2)
-			float e1 = a1*(x_min + 0.5f) + b1*(y_max - 0.5f) + c1;
+			e[1] = a[1]*(x_min + 0.5f) + b[1]*(y_max - 0.5f) + c[1];
 
 			// (P1 - P0)
-			float e2 = a2*(x_min + 0.5f) + b2*(y_max - 0.5f) + c2;
+			e[2] = a[2]*(x_min + 0.5f) + b[2]*(y_max - 0.5f) + c[2];
 
+			e[3] = 0.0f;
+
+			// loop (4 each time) SSE SIMD lanes
+			for (uint32_t i = y_max; i > y_min; --i) {
+				
+				// start at the left of the bounding-box
+				__m128 curr_e = _mm_load_ps(e);
+				__m128 curr_a = _mm_load_ps(a);
+				__m128 curr_b = _mm_load_ps(b);
+				_mm_store_ps((__m128*)curr_edge, curr_e);
+
+				for (uint32_t j = x_min; j < x_max; j += 1u) {
+					
+					//
+					// check if the pixels are inside/edge the triangle
+					//
+
+					// curr_e > float4(0.0f)
+					__m128 mask_inside = _mm_cmpgt_ps(curr_e, _mm_setzero_ps());
+
+					// curr_a > float4(0.0f)
+					__m128 mask_edge_a = _mm_cmpgt_ps(curr_a, _mm_setzero_ps());
+
+					// curr_b < float4(0.0f)
+					__m128 mask_edge_b = _mm_cmplt_ps(curr_b, _mm_setzero_ps());
+
+					// curr_e == float4(0.0f)
+					__m128 mask_edge_e = _mm_cmpeq_ps(curr_e, _mm_setzero_ps());
+
+					// curr_e > float4(0.0f) && ( curr_a > float4(0.0f) || curr_b < float4(0.0f) 
+					__m128 mask_edge = _mm_and_ps(mask_edge_e, _mm_or_ps(mask_edge_a, mask_edge_b));
+
+					// final decision value
+					__m128 rasterize = _mm_and_ps(mask_inside, mask_edge);
+
+					//
+					// rasterize pixel in case IF and ONLY IF it passed in the test
+					//
+
+					// GREATE DOC TO KEEP STUDYING (PAGE 14)
+					http://www.cs.uu.nl/docs/vakken/magr/2017-2018/files/SIMD%20Tutorial.pdf
+
+
+					// barycentric coordinates
+					float l0 = curr_e0 / (tri_area2);
+					float l1 = curr_e1 / (tri_area2);
+
+					// interpolate the color
+					float c_r = l0 * (tb[t].c0.x - tb[t].c2.x) + l1 * (tb[t].c1.x - tb[t].c2.x) + tb[t].c2.x;
+					float c_g = l0 * (tb[t].c0.y - tb[t].c2.y) + l1 * (tb[t].c1.y - tb[t].c2.y) + tb[t].c2.y;
+					float c_b = l0 * (tb[t].c0.z - tb[t].c2.z) + l1 * (tb[t].c1.z - tb[t].c2.z) + tb[t].c2.z;
+					Vec3 c = { c_r, c_g, c_b };
+
+					sb->surface_buffer[(sb->height - i) * sb->width + j] = rgb_float_to_uint32(c);
+
+					// step edge functions in +x
+					curr_edge[0] += a[0];
+					curr_edge[1] += a[1];
+					curr_edge[2] += a[2];
+				}
+
+				// step edge functions in -y
+				e[0] -= b[0];
+				e[1] -= b[1];
+				e[2] -= b[2];
+			}
+
+
+
+
+
+			/*
 			// loop (4 each time) SSE SIMD lanes
 			for (uint32_t i = y_max; i > y_min; --i) {
 				
@@ -127,52 +205,6 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 				e1 -= b1;
 				e2 -= b2;
 			}
-
-
-	
-
-			/*
-
-			// (The Scan-Line goes DOWN in Raster Coordinates)
-			// Loop (4 each time) SSE SIMD lanes
-			for (uint32_t i = y_max; i > y_min; --i) {
-				for (uint32_t j = x_min; j < x_max; ++j) {
-
-					// pixel center
-					float px = j + 0.5f;
-					float py = i - 0.5f;
-
-					//
-					// Edge Functions
-					//
-
-					// (P2 - P1)
-					float e0 = a0 * px + b0 * py + c0;
-
-					// (P0 - P2)
-					float e1 = a1 * px + b1 * py + c1;
-
-					// (P1 - P0)
-					float e2 = a2 * px + b2 * py + c2;
-
-					// Rasterize
-					if (IsPixelInsideTriangle(e0, e1, e2, a0, a1, a2, b0, b1, b2))
-					{
-						// barycentric coordinates
-						float l0 = e0/(tri_area2);
-						float l1 = e1/(tri_area2);
-
-						// interpolate the color
-						float c_r = l0*(tb[t].c0.x - tb[t].c2.x) + l1*(tb[t].c1.x - tb[t].c2.x) + tb[t].c2.x;
-						float c_g = l0*(tb[t].c0.y - tb[t].c2.y) + l1*(tb[t].c1.y - tb[t].c2.y) + tb[t].c2.y;
-						float c_b = l0*(tb[t].c0.z - tb[t].c2.z) + l1*(tb[t].c1.z - tb[t].c2.z) + tb[t].c2.z;
-						Vec3 c = {c_r, c_g, c_b};
-
-						sb->surface_buffer[(sb->height - i) * sb->width + j] = rgb_float_to_uint32(c);
-					}
-				}
-			}
-
 			*/
 		}
 	}
