@@ -116,11 +116,22 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 				for (uint32_t j = x_min; j < x_max; j++) {
 					
 					//
-					// check if the pixels are inside/edge the triangle
+					// READ Taking Notes before continuing (Same way I do in the P0P Engine time)
+					// http://const.me/articles/simd/simd.pdf
 					//
 
-					// curr_e > float4(0.0f)
+
+					//
+					// check if the pixels are inside the triangle
+					//
+
+					// curr_e > float4(0.0f) for all components
 					__m128 mask_inside = _mm_cmpgt_ps(curr_e, _mm_setzero_ps());
+					mask_inside = _mm_dp_ps(curr_e, curr_e, 0xFF);
+
+					//
+					// check if the pixels are in the edge 
+					//
 
 					// const_a > float4(0.0f)
 					__m128 mask_edge_a = _mm_cmpgt_ps(const_a, _mm_setzero_ps());
@@ -131,13 +142,16 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 					// curr_e == float4(0.0f)
 					__m128 mask_edge_e = _mm_cmpeq_ps(curr_e, _mm_setzero_ps());
 
-					// curr_e > float4(0.0f) && ( curr_a > float4(0.0f) || curr_b < float4(0.0f) 
+					// curr_e == float4(0.0f) && ( curr_a > float4(0.0f) || curr_b < float4(0.0f) 
 					__m128 mask_edge = _mm_and_ps(mask_edge_e, _mm_or_ps(mask_edge_a, mask_edge_b));
 
-					// final decision value
-					mask_inside = _mm_and_ps(mask_inside, mask_inside);
-					__m128 rasterize = _mm_or_ps(mask_inside, mask_edge);
-					
+					//
+					// check if the pixels passed in one of the two tests
+					//
+
+					//__m128 rasterize = _mm_or_ps(mask_inside, mask_edge);
+					__m128 rasterize = mask_inside;
+
 					//
 					// rasterize pixel in case IF and ONLY IF it passed in the test
 					//
