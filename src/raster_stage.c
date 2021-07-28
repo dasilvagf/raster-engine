@@ -37,29 +37,29 @@ THE SOFTWARE.
 
 void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 {
-	// Clear Back Buffer
+	// clear back buffer
 	for (uint32_t i = 0u; i < sb->height; ++i) 
 		for (uint32_t j = 0u; j < sb->width; j += 4)
 				_mm_storeu_si128((__m128i*)&sb->surface_buffer[i*sb->width + j], 
 				_mm_setzero_si128());
 
-	// For each of our triangles
+	// for each of our triangles
 	for (uint32_t t = 0u; t < tb_size; ++t){
 
 		// triangle area (multipled by 2)
 		float tri_area2 = OrientedArea(tb[t].p0, tb[t].p1, tb[t].p2);
 		
-		// Back-Face culling (CCW is front)
+		// back-face culling (CCW is front)
 		if (tri_area2 > 0.0f)
 		{
-			// Traverse inside Bounding Box
+			// traverse inside bounding box
 			uint32_t x_min = (uint32_t)roundf(tb[t].triBB.p0.x);
 			uint32_t y_min = (uint32_t)roundf(tb[t].triBB.p0.y);
 			uint32_t x_max = (uint32_t)roundf(tb[t].triBB.p1.x);
 			uint32_t y_max = (uint32_t)roundf(tb[t].triBB.p1.y);
 
 			//
-			// Edge Functions (Constants)
+			// edge functions (constants)
 			//
 			float a[4], b[4], c[4];
 
@@ -82,11 +82,8 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			b[3] = 0.0f;
 			c[3] = 0.0f;
 
-			__m128 const_a = _mm_load_ps(a);
-			__m128 const_b = _mm_load_ps(b);
-
 			//
-			// Edge Functions (Initial Value)
+			// edge functions (initial value)
 			//
 			float e[4], curr_edge[4];
 
@@ -105,30 +102,23 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			e[3] = 0.0f;
 			curr_edge[3] = e[3];
 
+			//
+			// load to SIMD registers
+			//
+			__m128 const_a = _mm_load_ps(a);
+			__m128 const_b = _mm_load_ps(b);
 			__m128 curr_e = _mm_load_ps(e);
 			
-			//
-			// current performance without SIMD on DEBUG: 5ms (UPPER BOUND)
-			//
-
 			// rasterizer inside the bounding-box
 			for (uint32_t i = y_max; i > y_min; i--) {
 				for (uint32_t j = x_min; j < x_max; j++) {
-					
-					//
-					// READ Taking Notes before continuing (Same way I do in the P0P Engine time)
-					// http://const.me/articles/simd/simd.pdf
-					//
-
-
 					//
 					// check if the pixels are inside the triangle
 					//
 
 					// curr_e > float4(0.0f) for all components
 					__m128 mask_inside = _mm_cmpgt_ps(curr_e, _mm_setzero_ps());
-					mask_inside = _mm_dp_ps(curr_e, curr_e, 0xFF);
-
+					
 					//
 					// check if the pixels are in the edge 
 					//
@@ -146,37 +136,39 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 					__m128 mask_edge = _mm_and_ps(mask_edge_e, _mm_or_ps(mask_edge_a, mask_edge_b));
 
 					//
-					// check if the pixels passed in one of the two tests
+					// calculate barycentric coordinates
 					//
 
-					//__m128 rasterize = _mm_or_ps(mask_inside, mask_edge);
-					__m128 rasterize = mask_inside;
-
 					//
-					// rasterize pixel in case IF and ONLY IF it passed in the test
+					// SEE THE QUESTION OF USING  _mm_rcp_ps INSTEAD OF _mm_div_ps FOR FAST DIVISION
+					// 
+					// https://stackoverflow.com/questions/16822757/sse-integer-division
+					// http://supercomputingblog.com/optimization/getting-started-with-sse-programming/
 					//
-
-					// GREATE DOC TO KEEP STUDYING (PAGE 14)
-					//http://www.cs.uu.nl/docs/vakken/magr/2017-2018/files/SIMD%20Tutorial.pdf
-
-
-					// barycentric coordinates
 					float lt[4] = { curr_edge[0] / (tri_area2), curr_edge[1] / (tri_area2), 1.0f, 0.0f };
 					__m128 l = _mm_load_ps(lt);
 				
 					float l0 = curr_edge[0] / (tri_area2);
 					float l1 = curr_edge[1] / (tri_area2);
 
+					//
 					// interpolate the color
-				
-					
+					//
 					float c_r = l0 * (tb[t].c0.x - tb[t].c2.x) + l1 * (tb[t].c1.x - tb[t].c2.x) + tb[t].c2.x;
 					float c_g = l0 * (tb[t].c0.y - tb[t].c2.y) + l1 * (tb[t].c1.y - tb[t].c2.y) + tb[t].c2.y;
 					float c_b = l0 * (tb[t].c0.z - tb[t].c2.z) + l1 * (tb[t].c1.z - tb[t].c2.z) + tb[t].c2.z;
 					Vec3 c = { c_r, c_g, c_b };
 
-					uint32_t address_mask = (rasterize.m128_u32[0] || rasterize.m128_u32[1] || rasterize.m128_u32[2]);
-					sb->surface_buffer[address_mask*(sb->height - i) * sb->width + j] = rgb_float_to_uint32(c);
+					//
+					// check if the pixels passed in one of the two tests
+					//
+					int32_t edge_mask = _mm_movemask_ps(mask_inside);
+					int32_t rasterize = (edge_mask & 0x1 && edge_mask & 0x2 && edge_mask & 0x4) || _mm_movemask_ps(mask_edge);
+
+					//
+					// rasterize pixel in case IF and ONLY IF it passed in the test
+					//
+					sb->surface_buffer[rasterize*(sb->height - i) * sb->width + j] = rasterize*rgb_float_to_uint32(c);
 
 					// step edge functions in +x
 					curr_edge[0] += a[0];
@@ -200,7 +192,7 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 
 
 			/*
-			// loop (4 each time) SSE SIMD lanes
+			// NON SIMD Version
 			for (uint32_t i = y_max; i > y_min; --i) {
 				
 				// start at the left of the bounding-box

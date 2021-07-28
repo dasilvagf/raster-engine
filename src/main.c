@@ -110,27 +110,35 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		// 1 - Vertex Processing
 		//
 
-		// test triangle
-		Triangle t;
+		// test quad
+		Triangle t[2];
 
 		// position
 		Vec2 p0 = { 100.0f + dx, 100.0f + dy};
-		Vec2 p1 = {  50.0f + dx, 300.0f + dy};
-		Vec2 p2 = {   0.0f + dx, 100.0f + dy};
+		Vec2 p1 = { 200.0f + dx, 100.0f + dy};
+		Vec2 p2 = { 200.0f + dx, 200.0f + dy};
+		Vec2 p3 = { 100.0f + dx, 200.0f + dy};
 
 		//color
 		Vec3 r = { 1.0f, 0.0f, 0.0f };
 		Vec3 g = { 0.0f, 1.0f, 0.0f };
 		Vec3 b = { 0.0f, 0.0f, 1.0f };
+		Vec3 w = { 1.0f, 1.0f, 1.0f };
 		
-		t.p0 = p0; t.p1 = p1; t.p2 = p2;
-		t.c0 = r;  t.c1 = g;  t.c2 = b;
-		GenerateBoundingBoxForTriangle(&t);
+		// triangle 1
+		t[0].p0 = p0; t[0].p1 = p1; t[0].p2 = p2;
+		t[0].c0 = r;  t[0].c1 = g;  t[0].c2 = b;
+		GenerateBoundingBoxForTriangle(&t[0]);
+
+		// triangle 2
+		t[1].p0 = p0; t[1].p1 = p2; t[1].p2 = p3;
+		t[1].c0 = r;  t[1].c1 = b;  t[1].c2 = w;
+		GenerateBoundingBoxForTriangle(&t[1]);
 
 		//
 		// 2 - Rasterization
 		//
-		RasterTriangles(sb, &t, 1u);
+		RasterTriangles(sb, t, 2u);
 
 
 		//
