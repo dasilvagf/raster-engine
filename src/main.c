@@ -115,9 +115,9 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		// position
 		Vec2 p0 = { 100.0f + dx, 100.0f + dy};
-		Vec2 p1 = { 200.0f + dx, 100.0f + dy};
-		Vec2 p2 = { 200.0f + dx, 200.0f + dy};
-		Vec2 p3 = { 100.0f + dx, 200.0f + dy};
+		Vec2 p1 = { 500.0f + dx, 100.0f + dy};
+		Vec2 p2 = { 500.0f + dx, 500.0f + dy};
+		Vec2 p3 = { 100.0f + dx, 500.0f + dy};
 
 		//color
 		Vec3 r = { 1.0f, 0.0f, 0.0f };

@@ -53,6 +53,15 @@ typedef struct Vec3_t
 		float x, y, z;
 }Vec3;
 
+typedef union Vec4_t
+{
+	struct
+	{
+		float x, y, z, w;
+	};
+	__m128 xyzw;
+}Vec4;
+
 typedef struct BB_t
 {
 	Vec2 p0, p1;
@@ -106,5 +115,42 @@ static inline float OrientedTriangleArea(Vec2 a, Vec2 b, Vec2 c)
 {
 	return OrientedArea(a, b, c) / 2.0f;
 }
+
+//
+//	FAST Math Utils
+//
+static inline Vec4 DotProduct_SIMD(Vec4 a[4], Vec4 b[4])
+{
+	// spread the values by coordinates
+	__m128 dx_a = _mm_set_ps(a[0].x, a[1].x, a[2].x, a[3].x);
+	__m128 dx_b = _mm_set_ps(b[0].x, b[1].x, b[2].x, b[3].x);
+
+	__m128 dy_a = _mm_set_ps(a[0].y, a[1].y, a[2].y, a[3].y);
+	__m128 dy_b = _mm_set_ps(b[0].y, b[1].y, b[2].y, b[3].y);
+
+	__m128 dz_a = _mm_set_ps(a[0].z, a[1].z, a[2].z, a[3].z);
+	__m128 dz_b = _mm_set_ps(b[0].z, b[1].z, b[2].z, b[3].z);
+
+	__m128 dw_a = _mm_set_ps(a[0].w, a[1].w, a[2].w, a[3].w);
+	__m128 dw_b = _mm_set_ps(b[0].w, b[1].w, b[2].w, b[3].w);
+
+	// multiply each set of coordinates
+	__m128 dx = _mm_mul_ps(dx_a, dx_b);  
+	__m128 dy = _mm_mul_ps(dy_a, dy_b);
+	__m128 dz = _mm_mul_ps(dz_a, dz_b);
+	__m128 dw = _mm_mul_ps(dw_a, dw_b);
+
+	// add
+	dx = _mm_add_ps(dx, dy);
+	dy = _mm_add_ps(dz, dw);
+
+	// dot
+	Vec4 dot;
+	dot.xyzw = _mm_add_ps(dx, dy);
+
+	return dot;
+}
+
+
 
 #endif /* INCLUDE_MATH3D_H_ */

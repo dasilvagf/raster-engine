@@ -143,6 +143,8 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			__m128 green = _mm_load_ps(c_g);
 			__m128 blue = _mm_load_ps(c_b);
 			
+
+			
 			// rasterizer inside the bounding-box
 			for (uint32_t i = y_max; i > y_min; i--) {
 				for (uint32_t j = x_min; j < x_max; j++) {
@@ -181,6 +183,27 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 					float l0 = curr_edge[0] / (tri_area2);
 					float l1 = curr_edge[1] / (tri_area2);
 					
+
+					// Change the entire desing of the raster to use Data-Oriented Design with SOA
+					// Probrably won't take much time because the data part for now is very small
+					// 
+					// probrably a good ideia will be to have a mesh class in which we have something like this
+					// struct Mesh
+					// {
+					//		uint32_t n_vertices;
+					//		float* position; // at each 3 we have a postion a.k.a vec3
+					//		float* normal;	 // at each 3 we have a normal
+					//		float* texcoord; // at each 2 we have a texture coordinates
+					//		.... etc
+					// }
+					// 
+					//  READINGS
+					//		https://en.wikipedia.org/wiki/AoS_and_SoA
+					//		https://software.intel.com/content/www/us/en/develop/articles/how-to-manipulate-data-structure-to-optimize-memory-use-on-32-bit-intel-architecture.html
+					//		https://software.intel.com/content/www/us/en/develop/articles/memory-layout-transformations.html
+					//		https://gameprogrammingpatterns.com/data-locality.html
+
+
 
 					//
 					// interpolate the color
@@ -223,20 +246,18 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 
 				// step edge functions in -y
 				
-				/*
-				e[0] -= b[0];
-				e[1] -= b[1];
-				e[2] -= b[2];
-				curr_e = _mm_load_ps(e);
-				*/
+				
+				//e[0] -= b[0];
+				//e[1] -= b[1];
+				//e[2] -= b[2];
+				//curr_e = _mm_load_ps(e);
+				
 
 				column_e = _mm_sub_ps(column_e, const_b);
 				curr_e = column_e;
 
 				_mm_store_ps((__m128*)curr_edge, curr_e);
 			}
-
-
 			
 
 
