@@ -37,7 +37,7 @@ THE SOFTWARE.
 #define INCLUDE_MATH3D_H_
 
 #include <math.h>
-#include <immintrin.h>
+#include "SIMD.h"
 
 //
 //	Definitions

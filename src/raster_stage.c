@@ -143,8 +143,6 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			__m128 green = _mm_load_ps(c_g);
 			__m128 blue = _mm_load_ps(c_b);
 			
-
-			
 			// rasterizer inside the bounding-box
 			for (uint32_t i = y_max; i > y_min; i--) {
 				for (uint32_t j = x_min; j < x_max; j++) {
@@ -188,20 +186,60 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 					// Probrably won't take much time because the data part for now is very small
 					// 
 					// probrably a good ideia will be to have a mesh class in which we have something like this
-					// struct Mesh
-					// {
-					//		uint32_t n_vertices;
-					//		float* position; // at each 3 we have a postion a.k.a vec3
-					//		float* normal;	 // at each 3 we have a normal
-					//		float* texcoord; // at each 2 we have a texture coordinates
-					//		.... etc
-					// }
+					//
 					// 
-					//  READINGS
-					//		https://en.wikipedia.org/wiki/AoS_and_SoA
-					//		https://software.intel.com/content/www/us/en/develop/articles/how-to-manipulate-data-structure-to-optimize-memory-use-on-32-bit-intel-architecture.html
-					//		https://software.intel.com/content/www/us/en/develop/articles/memory-layout-transformations.html
-					//		https://gameprogrammingpatterns.com/data-locality.html
+					//  MESH in World Space
+					// 
+					// typedef struct Positions_t
+					// {
+					//		float* x;
+					//		float* y;
+					//		float* z;
+					//		float* w;
+					// }Positions;
+					// 
+					// typedef struct Normals_t
+					// {
+					//		float* x;
+					//		float* y;
+					//		float* z;
+					//		float* w;
+					// }Normals;
+					// 
+					// typedef struct TexCoords_t
+					// {
+					//		float* u;
+					//		float* v;
+					// }TexCoords;
+					//  
+					// typedef struct Mesh_t
+					// {
+					//		Positions position;
+					//		Normals normal;
+					//		TexCoords tex_coord;
+					// }Mesh;
+					// 
+					// 
+					// TRIANGLES in Screen Space
+					// 
+					// typedef struct ScreenPosition_t
+					// {
+					//		float* x;
+					//		float* y;
+					// }ScreenPosition_t;
+					// 
+					// typedef struct TexCoords_t
+					// {
+					//		float* u;
+					//		float* v;
+					// }TexCoords;
+					// 
+					// typedef struct Triangles_t
+					// {
+					//		ScreenPosition screen_position;
+					//		TexCoords tex_coord;
+					// }Triangles;
+					// 
 
 
 

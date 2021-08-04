@@ -7,11 +7,11 @@
                        \    /        /
                         \  /        /
                          \/________/
-     - RASTER ENGINE					raster_stage.h
+     - RASTER ENGINE					utils.h
 ===========================================================================
 The MIT License
 
-Copyright (c) 2020 Gabriel Felipe. https://github.com/dasilvagf
+Copyright (c) 2019-2021 Gabriel Felipe. https://github.com/dasilvagf
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,54 +33,16 @@ THE SOFTWARE.
 
 */
 
-#ifndef _INCLUDE_RASTER_STAGE_H_
-#define _INCLUDE_RASTER_STAGE_H_
+#ifndef INCLUDE_SIMD_H_
+#define INCLUDE_SIMD_H_
 
-#include "win32_buffer.h"
-#include "math3D.h"
+#include <immintrin.h>
 
-//
-// Hybrid SoA/AoS based on Data Oriented Design and Intel recommendations
-// towards performance on modern SIMD hardware
-//
-
-
-
-typedef struct Vec2PostionsSIMD_t
-{
-    float x[SIMD_REGISTERS_COUNT];
-    float y[SIMD_REGISTERS_COUNT];
-}Vec2PostionsSIMD;
-
-typedef struct Vec2TexCoordsSIMD_t
-{
-    float u[SIMD_REGISTERS_COUNT];
-    float v[SIMD_REGISTERS_COUNT];
-}Vec2TexCoordsSIMD;
-
-typedef struct Triangles_t
-{
-    Vec2PostionsSIMD* positions_groups;
-    Vec2TexCoordsSIMD* texcoord_groups;
-}Triangles;
-
-static inline uint32_t IsPixelInsideTriangle(float e0, float e1, float e2, 
-    float a0, float a1, float a2, 
-    float b0, float b1, float b2)
-{
-    // Check if sample point is inside the triangle
-    if (e0 > 0.0f && e1 > 0.0f && e2 > 0.0f)
-        return 1u;
-    // Otherwise, check whether or not it lies in one of the edges
-    else if ((e0 == 0.0f && (a0 > 0.0f || b0 < 0.0f)) ||
-             (e1 == 0.0f && (a1 > 0.0f || b1 < 0.0f)) ||
-             (e2 == 0.0f && (a2 > 0.0f || b2 < 0.0f)))
-        return 1u;
-
-    return 0u;
-}
-
-
-void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size);
+// SIMD registers 
+#if defined(_M_X64)
+#define SIMD_REGISTERS_COUNT 16u
+#else
+#define SIMD_REGISTERS_COUNT 8u
+#endif
 
 #endif
