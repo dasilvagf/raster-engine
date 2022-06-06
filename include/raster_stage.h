@@ -43,26 +43,7 @@ THE SOFTWARE.
 // Hybrid SoA/AoS based on Data Oriented Design and Intel recommendations
 // towards performance on modern SIMD hardware
 //
-
-
-
-typedef struct Vec2PostionsSIMD_t
-{
-    float x[SIMD_REGISTERS_COUNT];
-    float y[SIMD_REGISTERS_COUNT];
-}Vec2PostionsSIMD;
-
-typedef struct Vec2TexCoordsSIMD_t
-{
-    float u[SIMD_REGISTERS_COUNT];
-    float v[SIMD_REGISTERS_COUNT];
-}Vec2TexCoordsSIMD;
-
-typedef struct Triangles_t
-{
-    Vec2PostionsSIMD* positions_groups;
-    Vec2TexCoordsSIMD* texcoord_groups;
-}Triangles;
+// 
 
 static inline uint32_t IsPixelInsideTriangle(float e0, float e1, float e2, 
     float a0, float a1, float a2, 

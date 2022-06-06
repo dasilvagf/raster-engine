@@ -127,6 +127,9 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			c_b[2] = tb[t].c2.z;
 			c_b[3] = 0.0f;
 	
+
+			
+
 			//
 			// load to SIMD registers
 			//
@@ -181,68 +184,6 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 					float l0 = curr_edge[0] / (tri_area2);
 					float l1 = curr_edge[1] / (tri_area2);
 					
-
-					// Change the entire desing of the raster to use Data-Oriented Design with SOA
-					// Probrably won't take much time because the data part for now is very small
-					// 
-					// probrably a good ideia will be to have a mesh class in which we have something like this
-					//
-					// 
-					//  MESH in World Space
-					// 
-					// typedef struct Positions_t
-					// {
-					//		float* x;
-					//		float* y;
-					//		float* z;
-					//		float* w;
-					// }Positions;
-					// 
-					// typedef struct Normals_t
-					// {
-					//		float* x;
-					//		float* y;
-					//		float* z;
-					//		float* w;
-					// }Normals;
-					// 
-					// typedef struct TexCoords_t
-					// {
-					//		float* u;
-					//		float* v;
-					// }TexCoords;
-					//  
-					// typedef struct Mesh_t
-					// {
-					//		Positions position;
-					//		Normals normal;
-					//		TexCoords tex_coord;
-					// }Mesh;
-					// 
-					// 
-					// TRIANGLES in Screen Space
-					// 
-					// typedef struct ScreenPosition_t
-					// {
-					//		float* x;
-					//		float* y;
-					// }ScreenPosition_t;
-					// 
-					// typedef struct TexCoords_t
-					// {
-					//		float* u;
-					//		float* v;
-					// }TexCoords;
-					// 
-					// typedef struct Triangles_t
-					// {
-					//		ScreenPosition screen_position;
-					//		TexCoords tex_coord;
-					// }Triangles;
-					// 
-
-
-
 					//
 					// interpolate the color
 					//
@@ -297,8 +238,6 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 				_mm_store_ps((__m128*)curr_edge, curr_e);
 			}
 			
-
-
 			/*
 			// NON SIMD Version
 			for (uint32_t i = y_max; i > y_min; --i) {
@@ -338,6 +277,7 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 				e[2] -= b[2];
 			}
 			*/
+		
 			
 		}
 	}
