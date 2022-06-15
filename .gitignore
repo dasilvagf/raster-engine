@@ -76,3 +76,4 @@ raster-engine/x64/Release/win32_buffer.obj
 *.bat~
 *.exe
 *.pdb
+*.ipch

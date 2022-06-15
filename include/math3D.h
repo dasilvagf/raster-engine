@@ -119,36 +119,20 @@ static inline float OrientedTriangleArea(Vec2 a, Vec2 b, Vec2 c)
 //
 //	FAST Math Utils
 //
-static inline Vec4 DotProduct_SIMD(Vec4 a[4], Vec4 b[4])
+
+// Dot product 8 vec4 at the same time
+static inline __m128 DotProduct_SIMD(__m128 vectors[8])
 {
-	// spread the values by coordinates
-	__m128 dx_a = _mm_set_ps(a[0].x, a[1].x, a[2].x, a[3].x);
-	__m128 dx_b = _mm_set_ps(b[0].x, b[1].x, b[2].x, b[3].x);
+	// Multiplications
+	__m128 AdotB = _mm_mul_ps(vectors[0], vectors[1]);
+	__m128 CdotD = _mm_mul_ps(vectors[2], vectors[3]);
+	__m128 EdotF = _mm_mul_ps(vectors[4], vectors[5]);
+	__m128 GdotH = _mm_mul_ps(vectors[6], vectors[7]);
 
-	__m128 dy_a = _mm_set_ps(a[0].y, a[1].y, a[2].y, a[3].y);
-	__m128 dy_b = _mm_set_ps(b[0].y, b[1].y, b[2].y, b[3].y);
-
-	__m128 dz_a = _mm_set_ps(a[0].z, a[1].z, a[2].z, a[3].z);
-	__m128 dz_b = _mm_set_ps(b[0].z, b[1].z, b[2].z, b[3].z);
-
-	__m128 dw_a = _mm_set_ps(a[0].w, a[1].w, a[2].w, a[3].w);
-	__m128 dw_b = _mm_set_ps(b[0].w, b[1].w, b[2].w, b[3].w);
-
-	// multiply each set of coordinates
-	__m128 dx = _mm_mul_ps(dx_a, dx_b);  
-	__m128 dy = _mm_mul_ps(dy_a, dy_b);
-	__m128 dz = _mm_mul_ps(dz_a, dz_b);
-	__m128 dw = _mm_mul_ps(dw_a, dw_b);
-
-	// add
-	dx = _mm_add_ps(dx, dy);
-	dy = _mm_add_ps(dz, dw);
-
-	// dot
-	Vec4 dot;
-	dot.xyzw = _mm_add_ps(dx, dy);
-
-	return dot;
+	// Additions
+	AdotB = _mm_hadd_ps(AdotB, CdotD);
+	CdotD = _mm_hadd_ps(EdotF, GdotH);
+	return  _mm_hadd_ps(AdotB, CdotD);
 }
 
 
