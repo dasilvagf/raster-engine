@@ -48,7 +48,7 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 
 		// triangle area (multipled by 2)
 		float tri_area2 = OrientedArea(tb[t].p0, tb[t].p1, tb[t].p2);
-		float inv_tri_simd[] = {1.0f/ tri_area2, 1.0f/ tri_area2, 1.0f, 0.0f};
+		float inv_tri_simd[] = {1.0f/ tri_area2, 1.0f/ tri_area2, 0.0f, 0.0f};
 		
 		// back-face culling (CCW is front)
 		if (tri_area2 > 0.0f)
@@ -125,7 +125,7 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			c_b[1] = tb[t].c1.z - tb[t].c2.z;
 			c_b[2] = tb[t].c2.z;
 			c_b[3] = 0.0f;
-	
+
 			//
 			// load to SIMD registers
 			//
@@ -172,44 +172,55 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 					// calculate barycentric coordinates
 					//
 
+
+					/// HERE IS WHERE I'M SEE HOW I'M GONNA MULTIPLY THIS WITHOUT SPENDING MUCH
+					/// TIME AND KEEP Z being 1
 					// divide edges by 2 times the area of the triangle 
 					__m128 l = _mm_mul_ps(curr_e, inv_tri);
 					
-					float l0 = curr_edge[0] / (tri_area2);
-					float l1 = curr_edge[1] / (tri_area2);
+					//float l0 = curr_edge[0] / (tri_area2);
+					//float l1 = curr_edge[1] / (tri_area2);
 					
 					//
 					// interpolate the color (Dot Product)
 					//
 
-					float c_r = l0 * (tb[t].c0.x - tb[t].c2.x) + l1 * (tb[t].c1.x - tb[t].c2.x) + tb[t].c2.x;
-					float c_g = l0 * (tb[t].c0.y - tb[t].c2.y) + l1 * (tb[t].c1.y - tb[t].c2.y) + tb[t].c2.y;
-					float c_b = l0 * (tb[t].c0.z - tb[t].c2.z) + l1 * (tb[t].c1.z - tb[t].c2.z) + tb[t].c2.z;
+					//float c_r = l0 * (tb[t].c0.x - tb[t].c2.x) + l1 * (tb[t].c1.x - tb[t].c2.x) + tb[t].c2.x;
+					//float c_g = l0 * (tb[t].c0.y - tb[t].c2.y) + l1 * (tb[t].c1.y - tb[t].c2.y) + tb[t].c2.y;
+					//float c_b = l0 * (tb[t].c0.z - tb[t].c2.z) + l1 * (tb[t].c1.z - tb[t].c2.z) + tb[t].c2.z;
+
+					float c_r = l.m128_f32[0] * (tb[t].c0.x - tb[t].c2.x) + l.m128_f32[1] * (tb[t].c1.x - tb[t].c2.x) + tb[t].c2.x;
+					float c_g = l.m128_f32[0] * (tb[t].c0.y - tb[t].c2.y) + l.m128_f32[1] * (tb[t].c1.y - tb[t].c2.y) + tb[t].c2.y;
+					float c_b = l.m128_f32[0] * (tb[t].c0.z - tb[t].c2.z) + l.m128_f32[1] * (tb[t].c1.z - tb[t].c2.z) + tb[t].c2.z;
 					
 					// multiplication part (ignore w component)
 					__m128 c_red = _mm_mul_ps(l, red);
 					__m128 c_green = _mm_mul_ps(l, green);
 					__m128 c_blue = _mm_mul_ps(l, blue);
 
+					float b_1 = l.m128_f32[0] * (tb[t].c0.z - tb[t].c2.z);
+					float b_2 = l.m128_f32[1] * (tb[t].c1.z - tb[t].c2.z);
+					float b_3 = tb[t].c2.z;
+
 					// addition part
 					c_red = _mm_hadd_ps(c_red, c_green);
-					c_blue = _mm_hadd_ps(c_red, _mm_setzero_ps());
+					c_blue = _mm_hadd_ps(c_blue, _mm_setzero_ps());
 
 					__m128 rgba_color = _mm_hadd_ps(c_red, c_blue);
 
 					// step edge functions in +x
-					curr_edge[0] += a[0];
-					curr_edge[1] += a[1];
-					curr_edge[2] += a[2];
+					//curr_edge[0] += a[0];
+					//curr_edge[1] += a[1];
+					//curr_edge[2] += a[2];
 
-					//curr_e = _mm_add_ps(curr_e, const_a);
-					curr_e = _mm_load_ps(curr_edge);
+					curr_e = _mm_add_ps(curr_e, const_a);
+					//curr_e = _mm_load_ps(curr_edge);
 
-					//Vec3 c = { c_red.m128_f32[0], c_green.m128_f32[0],  c_blue.m128_f32[0]};
-					Vec3 c = { c_r, c_g, c_b };
+					Vec3 c = { rgba_color.m128_f32[0], rgba_color.m128_f32[1],  rgba_color.m128_f32[2]};
+					//Vec3 c = { c_r, c_g, c_b };
 
 					//
-					// check if the pixels passed in one of the two tests
+					// check if the pixels passed in one of the two tests (edge or insde)
 					//
 					int32_t edge_mask = _mm_movemask_ps(mask_inside);
 					int32_t rasterize = (edge_mask & 0x1 && edge_mask & 0x2 && edge_mask & 0x4) || _mm_movemask_ps(mask_edge);
