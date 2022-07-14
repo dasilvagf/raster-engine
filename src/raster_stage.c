@@ -176,8 +176,10 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 					/// HERE IS WHERE I'M SEE HOW I'M GONNA MULTIPLY THIS WITHOUT SPENDING MUCH
 					/// TIME AND KEEP Z being 1
 					// divide edges by 2 times the area of the triangle 
-					__m128 l = _mm_mul_ps(curr_e, inv_tri);
+					// https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#text=set&ig_expand=6234,4085&techs=SSE4_1
+					__m128 l = _mm_insert_ps(_mm_mul_ps(curr_e, inv_tri), SIMD_128_Z_ONE, );
 					
+
 					//float l0 = curr_edge[0] / (tri_area2);
 					//float l1 = curr_edge[1] / (tri_area2);
 					

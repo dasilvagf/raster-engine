@@ -38,13 +38,23 @@ THE SOFTWARE.
 
 #include <immintrin.h>
 
+//
 // SIMD registers 
+//
 #if defined(_M_X64)
 #define SIMD_REGISTERS_COUNT 16u
 #else
 #define SIMD_REGISTERS_COUNT 8u
 #endif
 
-
+//
+// Constants
+//
+static const __m128 SIMD_128_MASK_HI = { (float)(0xFFFFFFFF), (float)(0xFFFFFFFF), 0.0f, 0.0f };
+static const __m128 SIMD_128_MASK_LOW = { 0.0f, 0.0f, (float)(0xFFFFFFFF), (float)(0xFFFFFFFF) };
+static const __m128 SIMD_128_X_ONE = { 1.0f, 0.0f, 0.0f, 0.0f };
+static const __m128 SIMD_128_Y_ONE = { 0.0f, 1.0f, 0.0f, 0.0f };
+static const __m128 SIMD_128_Z_ONE = { 0.0f, 0.0f, 1.0f, 0.0f };
+static const __m128 SIMD_128_W_ONE = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 #endif
