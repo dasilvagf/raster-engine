@@ -59,6 +59,16 @@ static inline uint32_t rgb_float_to_uint32(Vec3 color_rgb)
     return (uint32_t)(0xFF << 24 | r << 16 | g << 8 | b);
 }
 
+// WARNING: This function will BREAK the flow of SIMD instructions
+static inline uint32_t rgba_SIMD_float_to_uint32(__m128 color_rgba)
+{
+    // ARGB
+    __m128 rgba_white = {0xFF, 0xFF, 0xFF, 0xff};
+    __m128i int_rgba = _mm_cvtps_epi32(_mm_mul_ps(color_rgba, rgba_white));
+
+    return (uint32_t)(0xFF << 24 | int_rgba.m128i_u32[0] << 16 | int_rgba.m128i_u32[1] << 8 | int_rgba.m128i_u32[2]);
+}
+
 StarPolygon* CreateZeldaTriForcePolygon(float side_length, Vec2 center);
 StarPolygon* CreateStarPolygon(float side_length, Vec2 center);
 

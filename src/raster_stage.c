@@ -172,54 +172,29 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 					// calculate barycentric coordinates
 					//
 
+					// divide edges by 2 times the area of the triangle and set z to 1
+					__m128 l = _mm_insert_ps(_mm_mul_ps(curr_e, inv_tri), SIMD_128_Z_ONE, 0xA0 /*1010 0000, see intrinsics website*/);
 
-					/// HERE IS WHERE I'M SEE HOW I'M GONNA MULTIPLY THIS WITHOUT SPENDING MUCH
-					/// TIME AND KEEP Z being 1
-					// divide edges by 2 times the area of the triangle 
-					// https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#text=set&ig_expand=6234,4085&techs=SSE4_1
-					__m128 l = _mm_insert_ps(_mm_mul_ps(curr_e, inv_tri), SIMD_128_Z_ONE, );
-					
-
-					//float l0 = curr_edge[0] / (tri_area2);
-					//float l1 = curr_edge[1] / (tri_area2);
-					
 					//
 					// interpolate the color (Dot Product)
 					//
 
-					//float c_r = l0 * (tb[t].c0.x - tb[t].c2.x) + l1 * (tb[t].c1.x - tb[t].c2.x) + tb[t].c2.x;
-					//float c_g = l0 * (tb[t].c0.y - tb[t].c2.y) + l1 * (tb[t].c1.y - tb[t].c2.y) + tb[t].c2.y;
-					//float c_b = l0 * (tb[t].c0.z - tb[t].c2.z) + l1 * (tb[t].c1.z - tb[t].c2.z) + tb[t].c2.z;
-
-					float c_r = l.m128_f32[0] * (tb[t].c0.x - tb[t].c2.x) + l.m128_f32[1] * (tb[t].c1.x - tb[t].c2.x) + tb[t].c2.x;
-					float c_g = l.m128_f32[0] * (tb[t].c0.y - tb[t].c2.y) + l.m128_f32[1] * (tb[t].c1.y - tb[t].c2.y) + tb[t].c2.y;
-					float c_b = l.m128_f32[0] * (tb[t].c0.z - tb[t].c2.z) + l.m128_f32[1] * (tb[t].c1.z - tb[t].c2.z) + tb[t].c2.z;
-					
 					// multiplication part (ignore w component)
 					__m128 c_red = _mm_mul_ps(l, red);
 					__m128 c_green = _mm_mul_ps(l, green);
 					__m128 c_blue = _mm_mul_ps(l, blue);
 
-					float b_1 = l.m128_f32[0] * (tb[t].c0.z - tb[t].c2.z);
-					float b_2 = l.m128_f32[1] * (tb[t].c1.z - tb[t].c2.z);
-					float b_3 = tb[t].c2.z;
-
 					// addition part
 					c_red = _mm_hadd_ps(c_red, c_green);
 					c_blue = _mm_hadd_ps(c_blue, _mm_setzero_ps());
 
+					// final interpolated color
 					__m128 rgba_color = _mm_hadd_ps(c_red, c_blue);
 
+					//
 					// step edge functions in +x
-					//curr_edge[0] += a[0];
-					//curr_edge[1] += a[1];
-					//curr_edge[2] += a[2];
-
+					//
 					curr_e = _mm_add_ps(curr_e, const_a);
-					//curr_e = _mm_load_ps(curr_edge);
-
-					Vec3 c = { rgba_color.m128_f32[0], rgba_color.m128_f32[1],  rgba_color.m128_f32[2]};
-					//Vec3 c = { c_r, c_g, c_b };
 
 					//
 					// check if the pixels passed in one of the two tests (edge or insde)
@@ -230,22 +205,12 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 					//
 					// rasterize pixel, IF and ONLY IF, it passed in the test
 					//
-					sb->surface_buffer[rasterize * (sb->height - i) * sb->width + j] = rasterize * rgb_float_to_uint32(c);
+					sb->surface_buffer[rasterize * (sb->height - i) * sb->width + j] = rasterize * rgba_SIMD_float_to_uint32(rgba_color);
 				}
 
 				// step edge functions in -y
-				
-				
-				//e[0] -= b[0];
-				//e[1] -= b[1];
-				//e[2] -= b[2];
-				//curr_e = _mm_load_ps(e);
-				
-
 				column_e = _mm_sub_ps(column_e, const_b);
 				curr_e = column_e;
-
-				_mm_store_ps((__m128*)curr_edge, curr_e);
 			}
 			
 			/*
