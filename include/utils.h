@@ -66,6 +66,12 @@ static inline uint32_t rgba_SIMD_float_to_uint32(__m128 color_rgba)
     __m128 rgba_white = {0xFF, 0xFF, 0xFF, 0xff};
     __m128i int_rgba = _mm_cvtps_epi32(_mm_mul_ps(color_rgba, rgba_white));
 
+    //
+    // see SIMD instruction for masking and shifting
+    // take a look at for copying the result of my shifting idea for packing
+    // (_mm_cvtsi128_si32) https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#text=_mm_cvtsi128_si32&ig_expand=2310
+    //
+
     return (uint32_t)(0xFF << 24 | int_rgba.m128i_u32[0] << 16 | int_rgba.m128i_u32[1] << 8 | int_rgba.m128i_u32[2]);
 }
 

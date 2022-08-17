@@ -146,7 +146,7 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			for (uint32_t i = y_max; i > y_min; i--) {
 				for (uint32_t j = x_min; j < x_max; j++) {
 					//
-					// check if the pixels are inside the triangle
+					// check if the pixels are inside the triangle	
 					//
 
 					// curr_e > float4(0.0f) for all components
@@ -173,7 +173,7 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 					//
 
 					// divide edges by 2 times the area of the triangle and set z to 1
-					__m128 l = _mm_insert_ps(_mm_mul_ps(curr_e, inv_tri), SIMD_128_Z_ONE, 0xA0 /*1010 0000, see intrinsics website*/);
+					__m128 l = _mm_insert_ps(_mm_mul_ps(curr_e, inv_tri), SIMD_128_Z_ONE, 0xA0);
 
 					//
 					// interpolate the color (Dot Product)
@@ -212,7 +212,7 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 				column_e = _mm_sub_ps(column_e, const_b);
 				curr_e = column_e;
 			}
-			
+
 			/*
 			// NON SIMD Version
 			for (uint32_t i = y_max; i > y_min; --i) {
@@ -252,8 +252,6 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 				e[2] -= b[2];
 			}
 			*/
-		
-			
 		}
 	}
 }
