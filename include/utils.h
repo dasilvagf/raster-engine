@@ -62,17 +62,25 @@ static inline uint32_t rgb_float_to_uint32(Vec3 color_rgb)
 // WARNING: This function will BREAK the flow of SIMD instructions
 static inline uint32_t rgba_SIMD_float_to_uint32(__m128 color_rgba)
 {
-    // ARGB
-    __m128 rgba_white = {0xFF, 0xFF, 0xFF, 0xff};
+    // Convert from float [0,1] to uint8 [0, 255] (Compression)
+    __m128 rgba_white = {0xFF, 0xFF, 0xFF, 0xFF};
     __m128i int_rgba = _mm_cvtps_epi32(_mm_mul_ps(color_rgba, rgba_white));
 
-    //
-    // see SIMD instruction for masking and shifting
-    // take a look at for copying the result of my shifting idea for packing
-    // (_mm_cvtsi128_si32) https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#text=_mm_cvtsi128_si32&ig_expand=2310
-    //
+    // Pack each color to a byte in the first SIMD register (most signficative)
+    __m128i R = _mm_slli_si128(int_rgba, 12 + 2);
+    __m128i G = _mm_slli_si128(int_rgba, 12 + 1);
+    __m128i B = _mm_slli_si128(int_rgba, 12);
 
-    return (uint32_t)(0xFF << 24 | int_rgba.m128i_u32[0] << 16 | int_rgba.m128i_u32[1] << 8 | int_rgba.m128i_u32[2]);
+    // Pack ARGB together in the first SIMD register (most signficative)
+    __m128i final_color = { 0x0, 0x0, 0x0, 0xFF000000 };
+    final_color = _mm_or_si128(final_color, R);
+    final_color = _mm_or_si128(final_color, G);
+    final_color = _mm_or_si128(final_color, B);
+
+    // Return first SIMD register (most signficative)
+    uint32_t final_color_scalar = (uint32_t) _mm_cvtsi128_si32(final_color);
+    return final_color_scalar;
+    //return (uint32_t)(0xFF << 24 | int_rgba.m128i_u32[0] << 16 | int_rgba.m128i_u32[1] << 8 | int_rgba.m128i_u32[2]);
 }
 
 StarPolygon* CreateZeldaTriForcePolygon(float side_length, Vec2 center);
