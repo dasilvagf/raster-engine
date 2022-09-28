@@ -77,3 +77,11 @@ raster-engine/x64/Release/win32_buffer.obj
 *.exe
 *.pdb
 *.ipch
+*.lock
+.vs/raster-engine/v17/.suo
+*.db
+*.db-shm
+*.db-wal
+*.opendb
+*.idb
+*.vsidx
