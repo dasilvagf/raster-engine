@@ -66,24 +66,12 @@ static inline uint32_t rgba_SIMD_float_to_uint32(__m128 color_rgba)
     __m128 rgba_white = _mm_set_ps(0xFF, 0xFF, 0xFF, 0xFF);
     __m128i int_rgba = _mm_cvtps_epi32(_mm_mul_ps(color_rgba, rgba_white));
 
-    // Pack each color to a byte in the first SIMD register (lest signficative)
-    __m128i R = _mm_slli_si128(int_rgba, 12 + 2);
-    __m128i G = _mm_slli_si128(int_rgba, 12 + 0);
-    __m128i B = _mm_slli_si128(int_rgba, 12);
-
-    // Pack ARGB together in the first SIMD register (lest signficative)
-    __m128i final_color = _mm_setr_epi32(0x0, 0x0, 0x0, 0xFF000000);
-    final_color = _mm_or_si128(final_color, R);
-    final_color = _mm_or_si128(final_color, G);
-    final_color = _mm_or_si128(final_color, B);
-
-    // Return first SIMD register (most signficative)
-    uint32_t final_color_scalar = (uint32_t) _mm_cvtsi128_si32(_mm_srli_si128(final_color, 12));
-    //return final_color_scalar;
-    uint32_t final_color_scalar2 = (uint32_t)(0xFF << 24 | int_rgba.m128i_u32[0] << 16 | int_rgba.m128i_u32[1] << 8 | int_rgba.m128i_u32[2]);
-    return final_color_scalar2;
-
-    //return (uint32_t)(0xFF << 24 | int_rgba.m128i_u32[0] << 16 | int_rgba.m128i_u32[1] << 8 | int_rgba.m128i_u32[2]);
+    // Extract the channels from the SIMD register and compress it 
+    // into a 32-bit unsigned RGBA integer
+    return (uint32_t)(0xFF << 24 | 
+        _mm_cvtsi128_si32(_mm_srli_si128(int_rgba, 0)) << 16 | // Red Channel
+        _mm_cvtsi128_si32(_mm_srli_si128(int_rgba, 4)) << 8  | // Green Channel
+        _mm_cvtsi128_si32(_mm_srli_si128(int_rgba, 8)));       // Blue Chanell
 }
 
 StarPolygon* CreateZeldaTriForcePolygon(float side_length, Vec2 center);
