@@ -1,36 +1,29 @@
 /*
-===========================================================================
+	===========================================================================
                           _________
                          /\        \	created by
                         /  \        \			(GABRIEL ->
-                       /    \________\                <- EPILEF)
-                       \    /        /
-                        \  /        /
+                       /    \________\          y  z  <- EPILEF)
+                       \    /        /          | /
+                        \  /        /           |/___x
                          \/________/
-     - RASTER ENGINE					math3D.h
-===========================================================================
-The MIT License
+     - RASTER ENGINE					
+	===========================================================================
+    
+    Copyright (C) 2023  Gabriel F. S. da Silva
 
-Copyright (c) 2020 Gabriel Felipe. https://github.com/dasilvagf
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #ifndef INCLUDE_MATH3D_H_
@@ -55,12 +48,37 @@ typedef struct Vec3_t
 
 typedef union Vec4_t
 {
-	struct
+	union
 	{
-		float x, y, z, w;
+		struct
+		{
+			float x, y, z, w;
+		};
+		__m128 xyzw;
 	};
-	__m128 xyzw;
 }Vec4;
+
+typedef struct Mat4x4
+{
+	union
+	{
+		struct
+		{
+			float	m00, m01, m02, m03,
+					m10, m11, m12, m13,
+					m20, m21, m22, m23,
+					m30, m31, m32, m33;
+		};
+
+		struct
+		{
+			__m128 row0;
+			__m128 row1;
+			__m128 row2;
+			__m128 row3;
+		};
+	};
+}Mat4x4;
 
 typedef struct BB_t
 {
@@ -79,6 +97,7 @@ typedef struct Triangle_t
 	Vec2 p0, p1, p2; // 2d pixel position
 	Vec3 c0, c1, c2; // color
 	Vec2 uv0, uv1, uv2; // (u,v) texture coordinates
+	float d0, d1, d2; // depth 
 
 	BB triBB;
 }Triangle;

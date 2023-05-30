@@ -1,49 +1,51 @@
 /*
-===========================================================================
+	===========================================================================
                           _________
                          /\        \	created by
                         /  \        \			(GABRIEL ->
-                       /    \________\                <- EPILEF)
-                       \    /        /
-                        \  /        /
+                       /    \________\          y  z  <- EPILEF)
+                       \    /        /          | /
+                        \  /        /           |/___x
                          \/________/
-     - RASTER ENGINE					main.c
-===========================================================================
-The MIT License
+     - RASTER ENGINE					
+	===========================================================================
+    
+    Copyright (C) 2023  Gabriel F. S. da Silva
 
-Copyright (c) 2020 Gabriel Felipe. https://github.com/dasilvagf
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
 
 #include "../include/win32_buffer.h"
+#include "../include/vertex_stage.h"
 #include "../include/raster_stage.h"
 #include "../include/math3D.h"
+
+// GPL message
+static const char* gpl_license[] =
+{
+	"raster_engine - Copyright (C) 2023  Gabriel F. S. da Silva\n",
+	"This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.\n",
+	"This is free software, and you are welcome to redistribute it\n"
+	"under certain conditions; type `show c' for details.\n\n"
+};
 
 #define WINDOW_WIDTH 1024u
 #define WINDOW_HEIGHT 640u
 
-
-int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		PWSTR pCmdLine, int32_t nCmdShow)
 {
 	//
@@ -60,6 +62,9 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	float dx = 0.0f;
 	float dy = 0.0f;
+
+	// GPL message
+	printf("%s %s %s %s", gpl_license[0], gpl_license[1], gpl_license[2], gpl_license[3]);
 
 	//
 	// Pipeline Initialisation
@@ -103,12 +108,12 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		// ----------------------------------------------
 
 		//
-		// 0 - Input Assembler (IA)
+		// 0 - Vertex Processing
 		//
 
-		//
-		// 1 - Vertex Processing
-		//
+		// Test Quad
+		Vertex* vertex_buffer = NULL;
+		Vertex* index_buffer = NULL;
 
 		// test quad
 		Triangle t[2];
@@ -136,10 +141,21 @@ int32_t WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		GenerateBoundingBoxForTriangle(&t[1]);
 
 		//
-		// 2 - Rasterization
+		// 1 - Input Assembler (IA)
 		//
-		RasterTriangles(sb, t, 2u);
 
+		// Generate Triangles in CCW order 
+		Triangle* triangles_buffer = AssemblyTriangles(vertex_buffer, index_buffer, 
+			ARRAYSIZE(vertex_buffer), ARRAYSIZE(index_buffer));
+
+		//
+		// 2 - Clipping, Rasterization & Depth Buffering
+		//
+
+		// Clip Triangles using the Cohen–Sutherland Algorithm
+		
+		// Rasterize Triangles using the Pinneda Algorithm
+		RasterTriangles(sb, t, ARRAYSIZE(t));
 
 		//
 		// 3 - Pixel Processing

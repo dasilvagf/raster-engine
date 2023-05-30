@@ -1,42 +1,39 @@
 /*
-===========================================================================
+	===========================================================================
                           _________
                          /\        \	created by
                         /  \        \			(GABRIEL ->
-                       /    \________\                <- EPILEF)
-                       \    /        /
-                        \  /        /
+                       /    \________\          y  z  <- EPILEF)
+                       \    /        /          | /
+                        \  /        /           |/___x
                          \/________/
-     - RASTER ENGINE					raster_stage.c
-===========================================================================
-The MIT License
+     - RASTER ENGINE					
+	===========================================================================
+    
+    Copyright (C) 2023  Gabriel F. S. da Silva
 
-Copyright (c) 2020 Gabriel Felipe. https://github.com/dasilvagf
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "../include/raster_stage.h"
+static float* g_depth_buffer = NULL;
 
 void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 {
+	if (!g_depth_buffer)
+		g_depth_buffer = (float*)malloc(sizeof(float) * sb->width * sb->height);
+
 	// clear back buffer
 	for (uint32_t i = 0u; i < sb->height; ++i) 
 		for (uint32_t j = 0u; j < sb->width; j += 4)

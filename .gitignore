@@ -85,3 +85,6 @@ raster-engine/x64/Release/win32_buffer.obj
 *.opendb
 *.idb
 *.vsidx
+;
+*.tlog
+*.obj
