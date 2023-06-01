@@ -211,4 +211,7 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			}
 		}
 	}
+
+	// free triangles buffer
+	free(tb);
 }

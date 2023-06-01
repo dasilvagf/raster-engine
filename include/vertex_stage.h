@@ -32,11 +32,28 @@
 #include "win32_buffer.h"
 #include "math3D.h"
 
+typedef struct vertex_data_t
+{
+    Vertex* vb;
+    uint32_t vb_size;
+    uint32_t* ib;
+    uint32_t ib_size;
+}vertex_data;
+
+typedef struct viewport_t
+{
+    uint32_t width;
+    uint32_t height;
+    uint32_t top;
+    uint32_t left;
+}viewport;
+
 void TransformVerticesToHomogenousSpace();
 void TransformVerticesToNDCSpace();
 void ClipVetices();
+void MapToViewport(viewport vw, vertex_data vd);
 
-Triangle* AssemblyTriangles(Vertex* vb, uint32_t* ib, uint32_t vb_size, uint32_t ib_size);
+uint32_t AssemblyTriangles(Vertex* vb, uint32_t* ib, uint32_t vb_size, uint32_t ib_size, Triangle** t);
 
 
 #endif

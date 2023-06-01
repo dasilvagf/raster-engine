@@ -64,7 +64,7 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	float dy = 0.0f;
 
 	// GPL message
-	printf("%s %s %s %s", gpl_license[0], gpl_license[1], gpl_license[2], gpl_license[3]);
+	//printf("%s %s %s %s", gpl_license[0], gpl_license[1], gpl_license[2], gpl_license[3]);
 
 	//
 	// Pipeline Initialisation
@@ -111,51 +111,61 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		// 0 - Vertex Processing
 		//
 
-		// Test Quad
-		Vertex* vertex_buffer = NULL;
-		Vertex* index_buffer = NULL;
-
-		// test quad
-		Triangle t[2];
-
+		// ADD A TEST QUAD
+		
 		// position
-		Vec2 p0 = { 100.0f + dx, 100.0f + dy};
-		Vec2 p1 = { 500.0f + dx, 100.0f + dy};
-		Vec2 p2 = { 500.0f + dx, 500.0f + dy};
-		Vec2 p3 = { 100.0f + dx, 500.0f + dy};
+		Vec3 p0 = { 100.0f + dx, 100.0f + dy, 0.0f};
+		Vec3 p1 = { 500.0f + dx, 100.0f + dy, 0.0f};
+		Vec3 p2 = { 500.0f + dx, 500.0f + dy, 0.0f};
+		Vec3 p3 = { 100.0f + dx, 500.0f + dy, 0.0f};
 
-		//color
+		// color
 		Vec3 r = { 1.0f, 0.0f, 0.0f };
 		Vec3 g = { 0.0f, 1.0f, 0.0f };
 		Vec3 b = { 0.0f, 0.0f, 1.0f };
 		Vec3 w = { 1.0f, 1.0f, 1.0f };
 		
-		// triangle 1
-		t[0].p0 = p0; t[0].p1 = p1; t[0].p2 = p2;
-		t[0].c0 = r;  t[0].c1 = g;  t[0].c2 = b;
-		GenerateBoundingBoxForTriangle(&t[0]);
+		Vertex vertex_buffer[4];
+		vertex_buffer[0].position = p0;
+		vertex_buffer[0].color = r;
 
-		// triangle 2
-		t[1].p0 = p0; t[1].p1 = p2; t[1].p2 = p3;
-		t[1].c0 = r;  t[1].c1 = b;  t[1].c2 = w;
-		GenerateBoundingBoxForTriangle(&t[1]);
+		vertex_buffer[1].position = p1;
+		vertex_buffer[1].color = g;
+
+
+		vertex_buffer[2].position = p2;
+		vertex_buffer[2].color = b;
+	
+		
+		vertex_buffer[3].position = p3;
+		vertex_buffer[3].color = w;
+
+		uint32_t index_buffer[6] = {0u, 1u, 2u,			// triangle 1 
+									0u, 2u, 3u };		// triangle 2
 
 		//
-		// 1 - Input Assembler (IA)
+		// 1 - Vertex Processing
 		//
 
-		// Generate Triangles in CCW order 
-		Triangle* triangles_buffer = AssemblyTriangles(vertex_buffer, index_buffer, 
-			ARRAYSIZE(vertex_buffer), ARRAYSIZE(index_buffer));
+		// Transform Vertices (Local*World Transformations)
 
-		//
-		// 2 - Clipping, Rasterization & Depth Buffering
-		//
+		// Transform to Homogenous Coordinates and Project to NDC
 
 		// Clip Triangles using the Cohen–Sutherland Algorithm
+
+		// Map to Viewport
 		
+
+		// Generate Triangles in CCW order 
+		Triangle* triangles_buffer = NULL;
+		uint32_t tri_buffer_size = AssemblyTriangles(vertex_buffer, index_buffer, 4, 6, &triangles_buffer);
+
+		//
+		// 2 Rasterization & Depth Buffering
+		//
+
 		// Rasterize Triangles using the Pinneda Algorithm
-		RasterTriangles(sb, t, ARRAYSIZE(t));
+		RasterTriangles(sb, triangles_buffer, tri_buffer_size);
 
 		//
 		// 3 - Pixel Processing
