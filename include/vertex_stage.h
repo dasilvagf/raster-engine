@@ -48,12 +48,19 @@ typedef struct viewport_t
     uint32_t left;
 }viewport;
 
-void TransformVerticesToHomogenousSpace();
-void TransformVerticesToNDCSpace();
-void ClipVetices();
-void MapToViewport(viewport vw, vertex_data vd);
+typedef struct vertex_pipeline_desc_t
+{
+    Mat4x4 transformation_matrices; // contactenation of the object/world/projection matrices (multiply only ONCE)
+    viewport viewp;
+}vertex_pipeline_desc;
 
-uint32_t AssemblyTriangles(Vertex* vb, uint32_t* ib, uint32_t vb_size, uint32_t ib_size, Triangle** t);
+void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_data);
+
+// simulate (try-to!) the D3D9 Fixed-Pipeline Vertex Processing pipeline
+void ProcessVertices(vertex_pipeline_desc* pipeline_desc, vertex_data** in_out_data);
+
+// generate Triangles from Vertex/Index data
+uint32_t AssemblyTriangles(vertex_data* input_data, Triangle** output_data);
 
 
 #endif

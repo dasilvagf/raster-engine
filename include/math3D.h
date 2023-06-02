@@ -87,7 +87,11 @@ typedef struct BB_t
 
 typedef struct Vertex
 {
-	Vec3 position;
+	union
+	{
+		Vec3 position;
+		Vec4 h_position;
+	};
 	Vec3 color;
 	Vec2 texcoord;
 }Vertex;

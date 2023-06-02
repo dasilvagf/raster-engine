@@ -28,50 +28,111 @@
 
 #include "../include/vertex_stage.h"
 
-void TransformVerticesToHomogenousSpace()
+void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_data)
 {
+    //
+    // Parse file
+    //
+    uint32_t vertices_count = 4u;
+    uint32_t indices_count = 6u;
+
+    //
+    // Init mem
+    //
+    Vertex* vertex_buffer = (Vertex*)malloc(sizeof(Vertex) * vertices_count);
+    uint32_t* index_buffer = (uint32_t*)malloc(sizeof(uint32_t) * indices_count);
+
+    // Set the vertex buffer to 1. It will be used by the homogenous processing later
+    memset(vertex_buffer, 1, sizeof(Vertex) * vertices_count);
+
+    //
+    // Populate with data
+    //
+
+	// ADD A TEST QUAD
+		
+	// position
+	Vec3 p0 = { 100.0f , 100.0f , 0.0f};
+	Vec3 p1 = { 500.0f , 100.0f  , 0.0f};
+	Vec3 p2 = { 500.0f , 500.0f  , 0.0f};
+	Vec3 p3 = { 100.0f , 500.0f  , 0.0f};
+
+	// color
+	Vec3 r = { 1.0f, 0.0f, 0.0f };
+	Vec3 g = { 0.0f, 1.0f, 0.0f };
+	Vec3 b = { 0.0f, 0.0f, 1.0f };
+	Vec3 w = { 1.0f, 1.0f, 1.0f };
+	
+	vertex_buffer[0].position = p0;
+	vertex_buffer[0].color = r;
+
+	vertex_buffer[1].position = p1;
+	vertex_buffer[1].color = g;
+
+
+	vertex_buffer[2].position = p2;
+	vertex_buffer[2].color = b;
+
+	
+	vertex_buffer[3].position = p3;
+	vertex_buffer[3].color = w;
+
+    index_buffer[0] = 0u;
+	index_buffer[1] = 1u;
+	index_buffer[2] = 2u;
+    
+    index_buffer[3] = 0u;
+	index_buffer[4] = 2u;
+	index_buffer[5] = 3u;
+
+	*out_vertex_data = (vertex_data*)malloc(sizeof(vertex_data));
+	(*out_vertex_data)->ib_size = indices_count;
+	(*out_vertex_data)->vb_size = vertices_count;
+	(*out_vertex_data)->ib = index_buffer;
+	(*out_vertex_data)->vb = vertex_buffer;
+}
+
+void ProcessVertices(vertex_pipeline_desc* pipeline_desc, vertex_data** in_out_data)
+{
+	//
+    // Linear Coordinates Space
+    //
+
+
+
+    //
+    // Homogenous/Projective Coordinates Space
+    //
+
+
+
+    //
+    // Viewport mapping
+    //
+
+    // construct viewport matrix
+    Mat4x4 viewport_mat;
 
 }
 
-void TransformVerticesToNDCSpace()
+uint32_t AssemblyTriangles(vertex_data* input_data, Triangle** output_data)
 {
-    /*
-	* ===================================================
-	*	Cuboid Frustum (LHS) - Direct3D Convention
-	* ===================================================
-	*  
-	*  x e [-1.0f, 1.0f]
-	*  y e [-1.0f, 1.0f]
-	*  z e [ 0.0f, 1.0f]
-	*  
-	*				   _________ (1.0f, 1.0f, 1.0f)
-	*				  /|	   /| 
-	*	   Z+		 / |	  / |
-	*	  /	 		*--------* (1.0f, 1.0f, 0.0f)
-	*	 /		    |  |_____|__| (1.0f, -1.0f, 1.0f)
-	*	/			| / 	 | /
-	*				|/		 |/
-	*				*--------* (1.0f, -1.0f, 0.0f) 
-	*/
-}
+    if (!input_data)
+    {
+        *output_data = NULL;
+        return -1;
+    }
 
-void ClipVetices()
-{
-
-}
-
-void MapToViewport(viewport vw, vertex_data vd)
-{
-
-}
-
-uint32_t AssemblyTriangles(Vertex* vb, uint32_t* ib, uint32_t vb_size, uint32_t ib_size, Triangle** t)
-{
+	uint32_t vb_size = input_data->vb_size;
+	uint32_t ib_size = input_data->ib_size;
+	Vertex* vb = input_data->vb;
+	uint32_t* ib = input_data->ib;
+    
     if (vb_size > 0u && ib_size > 0u)
     {
         // our triangle count
         assert((ib_size % 3) == 0);
-        (*t) = (Triangle*)malloc(sizeof(Triangle) * (ib_size / 3u));
+        (*output_data) = (Triangle*)malloc(sizeof(Triangle) * (ib_size / 3u));
 
         // generate triangles folliwing CCW winding order
         for (uint32_t i = 0u; i < ib_size; i += 3u) {
@@ -124,7 +185,7 @@ uint32_t AssemblyTriangles(Vertex* vb, uint32_t* ib, uint32_t vb_size, uint32_t 
             //
             // add to triangle list
             //
-            (*t)[(i / 3u)] = tri;
+            (*output_data)[(i / 3u)] = tri;
         }
 
         return (ib_size / 3u);

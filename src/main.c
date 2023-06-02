@@ -67,8 +67,11 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	//printf("%s %s %s %s", gpl_license[0], gpl_license[1], gpl_license[2], gpl_license[3]);
 
 	//
-	// Pipeline Initialisation
+	// Data Pre-processing
 	//
+	vertex_data* input_vertices = NULL;
+	LoadVerticesDataFromDisk("dummy.obj", &input_vertices);
+	assert(input_vertices);
 
 	while(running)
 	{
@@ -110,69 +113,34 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		//
 		// 0 - Vertex Processing
 		//
+		vertex_pipeline_desc pipeline_desc;
 
-		// ADD A TEST QUAD
-		
-		// position
-		Vec3 p0 = { 100.0f + dx, 100.0f + dy, 0.0f};
-		Vec3 p1 = { 500.0f + dx, 100.0f + dy, 0.0f};
-		Vec3 p2 = { 500.0f + dx, 500.0f + dy, 0.0f};
-		Vec3 p3 = { 100.0f + dx, 500.0f + dy, 0.0f};
-
-		// color
-		Vec3 r = { 1.0f, 0.0f, 0.0f };
-		Vec3 g = { 0.0f, 1.0f, 0.0f };
-		Vec3 b = { 0.0f, 0.0f, 1.0f };
-		Vec3 w = { 1.0f, 1.0f, 1.0f };
-		
-		Vertex vertex_buffer[4];
-		vertex_buffer[0].position = p0;
-		vertex_buffer[0].color = r;
-
-		vertex_buffer[1].position = p1;
-		vertex_buffer[1].color = g;
+		// viewport mapping
+		viewport viewp = { WINDOW_WIDTH, WINDOW_HEIGHT, 0u, 0u };
+		pipeline_desc.viewp = viewp;
 
 
-		vertex_buffer[2].position = p2;
-		vertex_buffer[2].color = b;
-	
-		
-		vertex_buffer[3].position = p3;
-		vertex_buffer[3].color = w;
-
-		uint32_t index_buffer[6] = {0u, 1u, 2u,			// triangle 1 
-									0u, 2u, 3u };		// triangle 2
-
-		//
-		// 1 - Vertex Processing
-		//
-
-		// Transform Vertices (Local*World Transformations)
-
-		// Transform to Homogenous Coordinates and Project to NDC
-
-		// Clip Triangles using the Cohen–Sutherland Algorithm
-
-		// Map to Viewport
-		
+		// Fixed-Pipeline vertex stage
+		ProcessVertices(&pipeline_desc, &input_vertices);
 
 		// Generate Triangles in CCW order 
 		Triangle* triangles_buffer = NULL;
-		uint32_t tri_buffer_size = AssemblyTriangles(vertex_buffer, index_buffer, 4, 6, &triangles_buffer);
+		uint32_t tri_buffer_size = AssemblyTriangles(&input_vertices, &triangles_buffer);
+		assert(triangles_buffer);
 
 		//
-		// 2 Rasterization & Depth Buffering
+		// 1 Rasterization & Depth Buffering
 		//
 
 		// Rasterize Triangles using the Pinneda Algorithm
 		RasterTriangles(sb, triangles_buffer, tri_buffer_size);
 
 		//
-		// 3 - Pixel Processing
+		// 2 - Pixel Processing
 		//
 
 		//
-		// 4 - Output/Merger (Presentation)
+		// 3 - Output/Merger (Presentation)
 		//
 
 		// Compute Time to Compute Frame (ms)
