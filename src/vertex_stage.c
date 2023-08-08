@@ -28,6 +28,9 @@
 
 #include "../include/vertex_stage.h"
 
+// Act as the GPU vide0 memory
+static uint8_t* VERTEX_GPU_VRAM = NULL;
+
 void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_data)
 {
     //
@@ -42,9 +45,6 @@ void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_dat
     Vertex* vertex_buffer = (Vertex*)malloc(sizeof(Vertex) * vertices_count);
     uint32_t* index_buffer = (uint32_t*)malloc(sizeof(uint32_t) * indices_count);
 
-    // Set the vertex buffer to 1. It will be used by the homogenous processing later
-    memset(vertex_buffer, 1, sizeof(Vertex) * vertices_count);
-
     //
     // Populate with data
     //
@@ -52,10 +52,10 @@ void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_dat
 	// ADD A TEST QUAD
 		
 	// position
-	Vec3 p0 = { 100.0f , 100.0f , 0.0f};
-	Vec3 p1 = { 500.0f , 100.0f  , 0.0f};
-	Vec3 p2 = { 500.0f , 500.0f  , 0.0f};
-	Vec3 p3 = { 100.0f , 500.0f  , 0.0f};
+	Vec4 p0 = { -0.5f, -0.5f, 0.0f, 1.0f};
+	Vec4 p1 = {  0.5f, -0.5f, 0.0f, 1.0f};
+	Vec4 p2 = {  0.5f,  0.5f, 0.0f, 1.0f};
+	Vec4 p3 = { -0.5f,  0.5f, 0.0f, 1.0f};
 
 	// color
 	Vec3 r = { 1.0f, 0.0f, 0.0f };
@@ -63,18 +63,16 @@ void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_dat
 	Vec3 b = { 0.0f, 0.0f, 1.0f };
 	Vec3 w = { 1.0f, 1.0f, 1.0f };
 	
-	vertex_buffer[0].position = p0;
+	vertex_buffer[0].h_position = p0;
 	vertex_buffer[0].color = r;
 
-	vertex_buffer[1].position = p1;
+	vertex_buffer[1].h_position = p1;
 	vertex_buffer[1].color = g;
 
-
-	vertex_buffer[2].position = p2;
+	vertex_buffer[2].h_position = p2;
 	vertex_buffer[2].color = b;
-
 	
-	vertex_buffer[3].position = p3;
+	vertex_buffer[3].h_position = p3;
 	vertex_buffer[3].color = w;
 
     index_buffer[0] = 0u;
@@ -92,8 +90,14 @@ void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_dat
 	(*out_vertex_data)->vb = vertex_buffer;
 }
 
-void ProcessVertices(vertex_pipeline_desc* pipeline_desc, vertex_data** in_out_data)
+void ProcessVertices(vertex_pipeline_desc* pipeline_desc, vertex_data* in_data, vertex_data** out_data)
 {
+    // Handle VRAM
+    if (!VERTEX_GPU_VRAM)
+        VERTEX_GPU_VRAM = (uint8_t*)malloc(10000u * 1024u); // 1GB of memory
+    (*out_data) = (vertex_data*)VERTEX_GPU_VRAM;
+
+    Mat4x4 transform_matrix = MAT4X4_IDENTITY_MATRIX;
 	//
     // Linear Coordinates Space
     //
@@ -109,10 +113,21 @@ void ProcessVertices(vertex_pipeline_desc* pipeline_desc, vertex_data** in_out_d
     //
     // Viewport mapping
     //
+    float A = pipeline_desc->viewp.width / 2.0f;
+    float B = pipeline_desc->viewp.height / 2.0f;
 
-    // construct viewport matrix
-    Mat4x4 viewport_mat;
+    Mat4x4 viewport_mat = { A,    0.0f, 0.0f, 0.0f,
+                            0.0f, B,    0.0f, 0.0f,
+                            0.0f, 0.0f, 1.0f, 0.0f,
+                            A,    B,    0.0f, 1.0f};
+    transform_matrix = MulMatMat(&transform_matrix, &viewport_mat);
 
+    //
+    // Process Vertices
+    //
+    uint32_t n_vertices = in_data->vb_size;
+    for (uint32_t i = 0u; i < n_vertices; ++i)
+         (*out_data)->vb[i].h_position = MulVecMat(&(*out_data)->vb[i].h_position, &transform_matrix); 
 }
 
 uint32_t AssemblyTriangles(vertex_data* input_data, Triangle** output_data)
@@ -132,6 +147,10 @@ uint32_t AssemblyTriangles(vertex_data* input_data, Triangle** output_data)
     {
         // our triangle count
         assert((ib_size % 3) == 0);
+        // Note (Gabriel): This code section bellow is totally wastefull, is not a good
+        // practice to allocate this memory every time I issue a draw (~= 30 times per second).
+        // In the future implement a adaptive local store so we can always grab a "free" pointer
+        // to write data to it (a fake VRAM, kinda).
         (*output_data) = (Triangle*)malloc(sizeof(Triangle) * (ib_size / 3u));
 
         // generate triangles folliwing CCW winding order

@@ -52,7 +52,15 @@ typedef union Vec4_t
 	{
 		struct
 		{
-			float x, y, z, w;
+			union
+			{
+				struct
+				{
+					float x, y, z, w;
+				};
+
+				float v[4];
+			};
 		};
 		__m128 xyzw;
 	};
@@ -62,12 +70,18 @@ typedef struct Mat4x4
 {
 	union
 	{
-		struct
+		union
 		{
-			float	m00, m01, m02, m03,
+			struct
+			{
+				float	
+					m00, m01, m02, m03,
 					m10, m11, m12, m13,
 					m20, m21, m22, m23,
 					m30, m31, m32, m33;
+			};
+
+			float m[4][4];
 		};
 
 		struct
@@ -79,6 +93,20 @@ typedef struct Mat4x4
 		};
 	};
 }Mat4x4;
+
+#define MAT4X4_ZERO_MATRIX {							\
+							0.0f, 0.0f, 0.0f, 0.0f,		\
+							0.0f, 0.0f, 0.0f, 0.0f,		\
+							0.0f, 0.0f, 0.0f, 0.0f,		\
+							0.0f, 0.0f, 0.0f, 0.0f,		\
+}
+
+#define MAT4X4_IDENTITY_MATRIX {						\
+							1.0f, 0.0f, 0.0f, 0.0f,		\
+							0.0f, 1.0f, 0.0f, 0.0f,		\
+							0.0f, 0.0f, 1.0f, 0.0f,		\
+							0.0f, 0.0f, 0.0f, 1.0f,		\
+}
 
 typedef struct BB_t
 {
@@ -142,6 +170,29 @@ static inline float OrientedTriangleArea(Vec2 a, Vec2 b, Vec2 c)
 //
 //	FAST Math Utils
 //
+
+static inline Mat4x4 MulMatMat(Mat4x4* mat0, Mat4x4* mat1)
+{
+	Mat4x4 result = MAT4X4_ZERO_MATRIX;
+	for (uint32_t i = 0u; i < 4u; ++i)
+		for (uint32_t j = 0u; j < 4u; ++j)
+			for (uint32_t k = 0u; k < 4u; ++k)
+				result.m[i][j] += mat0->m[i][k] * mat1->m[k][j];
+
+	return result;
+}
+
+static Vec4 MulVecMat(Vec4* vec_in_out,  Mat4x4* mat)
+{
+	for (uint32_t i = 0u; i < 4u; ++i)
+			vec_in_out->v[i] = 
+			vec_in_out->v[0] * mat->m[0][i] + 
+			vec_in_out->v[1] * mat->m[1][i] + 
+			vec_in_out->v[2] * mat->m[2][i] + 
+			vec_in_out->v[3] * mat->m[3][i];
+
+	return *vec_in_out;
+}
 
 // Dot product 8 vec4 at the same time
 static inline __m128 DotProduct_SIMD(__m128 vectors[8])

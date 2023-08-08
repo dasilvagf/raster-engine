@@ -57,7 +57,7 @@ typedef struct vertex_pipeline_desc_t
 void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_data);
 
 // simulate (try-to!) the D3D9 Fixed-Pipeline Vertex Processing pipeline
-void ProcessVertices(vertex_pipeline_desc* pipeline_desc, vertex_data** in_out_data);
+void ProcessVertices(vertex_pipeline_desc* pipeline_desc, vertex_data* in_data, vertex_data** out_data);
 
 // generate Triangles from Vertex/Index data
 uint32_t AssemblyTriangles(vertex_data* input_data, Triangle** output_data);
