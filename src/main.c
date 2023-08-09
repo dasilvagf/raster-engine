@@ -73,11 +73,6 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	LoadVerticesDataFromDisk("dummy.obj", &input_vertices);
 	assert(input_vertices);
 
-	//
-	// Local heap variables
-	//
-	vertex_data* output_vertices = NULL;
-
 	while(running)
 	{
 		t0 = t1;
@@ -125,11 +120,12 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		pipeline_desc.viewp = viewp;
 
 		// Fixed-Pipeline vertex stage
+		vertex_data* output_vertices = NULL;
 		ProcessVertices(&pipeline_desc, input_vertices, &output_vertices);
 
 		// Generate Triangles in CCW order 
 		Triangle* triangles_buffer = NULL;
-		uint32_t tri_buffer_size = AssemblyTriangles(input_vertices, &triangles_buffer);
+		uint32_t tri_buffer_size = AssemblyTriangles(output_vertices, &triangles_buffer);
 		assert(triangles_buffer);
 
 		//

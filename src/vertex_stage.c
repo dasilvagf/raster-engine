@@ -28,8 +28,15 @@
 
 #include "../include/vertex_stage.h"
 
+//
 // Act as the GPU vide0 memory
+//
 static uint8_t* VERTEX_GPU_VRAM = NULL;
+static uint32_t mem_offset_ptr = 0u;
+
+#define CLEAR_VRAM_OFFSET 0u
+#define VRAM_MAX_SIZE 1024u * 1024u * 1024u // 1GB
+#define ALLOC_VRAM(size)(VERTEX_GPU_VRAM + mem_offset_ptr); mem_offset_ptr += size; assert(mem_offset_ptr < VRAM_MAX_SIZE)
 
 void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_data)
 {
@@ -92,15 +99,18 @@ void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_dat
 
 void ProcessVertices(vertex_pipeline_desc* pipeline_desc, vertex_data* in_data, vertex_data** out_data)
 {
+    //
     // Handle VRAM
+    //
+    mem_offset_ptr = CLEAR_VRAM_OFFSET;
     if (!VERTEX_GPU_VRAM)
-        VERTEX_GPU_VRAM = (uint8_t*)malloc(10000u * 1024u); // 1GB of memory
-    (*out_data) = (vertex_data*)VERTEX_GPU_VRAM;
-
-    Mat4x4 transform_matrix = MAT4X4_IDENTITY_MATRIX;
+        VERTEX_GPU_VRAM = (uint8_t*)malloc(VRAM_MAX_SIZE);
+    
 	//
     // Linear Coordinates Space
     //
+    (*out_data) = (vertex_data*)ALLOC_VRAM(sizeof(vertex_data));
+    Mat4x4 transform_matrix = MAT4X4_IDENTITY_MATRIX;
 
 
 
@@ -125,9 +135,23 @@ void ProcessVertices(vertex_pipeline_desc* pipeline_desc, vertex_data* in_data, 
     //
     // Process Vertices
     //
-    uint32_t n_vertices = in_data->vb_size;
-    for (uint32_t i = 0u; i < n_vertices; ++i)
-         (*out_data)->vb[i].h_position = MulVecMat(&(*out_data)->vb[i].h_position, &transform_matrix); 
+    (*out_data)->vb_size = in_data->vb_size;
+    (*out_data)->vb = (Vertex*)ALLOC_VRAM((*out_data)->vb_size * sizeof(Vertex));
+
+    for (uint32_t i = 0u; i < (*out_data)->vb_size; ++i) {
+        (*out_data)->vb[i].h_position = MulVecMat(&(in_data->vb[i].h_position), &transform_matrix);
+        (*out_data)->vb[i].color = in_data->vb[i].color;
+        (*out_data)->vb[i].texcoord = in_data->vb[i].texcoord;
+    }
+
+    //
+    // Process Indices
+    //
+	(*out_data)->ib_size = in_data->ib_size;
+	(*out_data)->ib = (uint32_t*)ALLOC_VRAM((*out_data)->ib_size * sizeof(uint32_t));
+    
+    // Copy Indices
+    memcpy((void*)(*out_data)->ib, (const void*)in_data->ib, in_data->ib_size * sizeof(uint32_t));
 }
 
 uint32_t AssemblyTriangles(vertex_data* input_data, Triangle** output_data)

@@ -182,16 +182,17 @@ static inline Mat4x4 MulMatMat(Mat4x4* mat0, Mat4x4* mat1)
 	return result;
 }
 
-static Vec4 MulVecMat(Vec4* vec_in_out,  Mat4x4* mat)
+static Vec4 MulVecMat(Vec4* vec,  Mat4x4* mat)
 {
+	Vec4 result;
 	for (uint32_t i = 0u; i < 4u; ++i)
-			vec_in_out->v[i] = 
-			vec_in_out->v[0] * mat->m[0][i] + 
-			vec_in_out->v[1] * mat->m[1][i] + 
-			vec_in_out->v[2] * mat->m[2][i] + 
-			vec_in_out->v[3] * mat->m[3][i];
+			result.v[i] = 
+			vec->v[0] * mat->m[0][i] + 
+			vec->v[1] * mat->m[1][i] + 
+			vec->v[2] * mat->m[2][i] + 
+			vec->v[3] * mat->m[3][i];
 
-	return *vec_in_out;
+	return result;
 }
 
 // Dot product 8 vec4 at the same time
