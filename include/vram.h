@@ -26,38 +26,13 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef _INCLUDE_VERTEX_STAGE_H_
-#define _INCLUDE_VERTEX_STAGE_H_
+#ifndef INCLUDE_VRAM_H_
+#define INCLUDE_VRAM_H_
 
-#include "win32_buffer.h"
-#include "math3D.h"
+#include "utils.h"
 
-typedef struct vertex_data_t
-{
-    Vertex* vb;
-    uint32_t vb_size;
-    uint32_t* ib;
-    uint32_t ib_size;
-}vertex_data;
-
-typedef struct viewport_t
-{
-    uint32_t width;
-    uint32_t height;
-    uint32_t top;
-    uint32_t left;
-}viewport;
-
-typedef struct vertex_pipeline_desc_t
-{
-    Mat4x4 transformation_matrices; // contactenation of the object/world/projection matrices (multiply only ONCE)
-    viewport viewp;
-}vertex_pipeline_desc;
-
-// simulate (try-to!) the D3D9 Fixed-Pipeline Vertex Processing pipeline
-void ProcessVertices(vertex_pipeline_desc* pipeline_desc, vertex_data* in_data, vertex_data** out_data);
-
-// generate Triangles from Vertex/Index data
-uint32_t AssemblyTriangles(vertex_data* input_data, Triangle** output_data);
+#define VRAM_MAX_SIZE 1024u * 1024u * 1024u // 1GB
+#define CLEAR_VRAM_OFFSET 0u
+#define ALLOC_VRAM(size, mem_offset_ptr)(VERTEX_GPU_VRAM + mem_offset_ptr); mem_offset_ptr += size; assert(mem_offset_ptr < VRAM_MAX_SIZE)
 
 #endif

@@ -27,97 +27,25 @@
 */
 
 #include "../include/vertex_stage.h"
+#include "../include/vram.h"
 
 //
 // Act as the GPU vide0 memory
 //
-static uint8_t* VERTEX_GPU_VRAM = NULL;
-static uint32_t mem_offset_ptr = 0u;
-
-#define CLEAR_VRAM_OFFSET 0u
-#define VRAM_MAX_SIZE 1024u * 1024u * 1024u // 1GB
-#define ALLOC_VRAM(size)(VERTEX_GPU_VRAM + mem_offset_ptr); mem_offset_ptr += size; assert(mem_offset_ptr < VRAM_MAX_SIZE)
-
-void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_data)
-{
-    //
-    // Parse file
-    //
-    uint32_t vertices_count = 4u;
-    uint32_t indices_count = 6u;
-
-    //
-    // Init mem
-    //
-    Vertex* vertex_buffer = (Vertex*)malloc(sizeof(Vertex) * vertices_count);
-    uint32_t* index_buffer = (uint32_t*)malloc(sizeof(uint32_t) * indices_count);
-
-    //
-    // Populate with data
-    //
-
-	// ADD A TEST QUAD
-		
-	// position
-	Vec4 p0 = { -0.5f, -0.5f, 0.0f, 1.0f};
-	Vec4 p1 = {  0.5f, -0.5f, 0.0f, 1.0f};
-	Vec4 p2 = {  0.5f,  0.5f, 0.0f, 1.0f};
-	Vec4 p3 = { -0.5f,  0.5f, 0.0f, 1.0f};
-
-	// color
-	Vec3 r = { 1.0f, 0.0f, 0.0f };
-	Vec3 g = { 0.0f, 1.0f, 0.0f };
-	Vec3 b = { 0.0f, 0.0f, 1.0f };
-	Vec3 w = { 1.0f, 1.0f, 1.0f };
-	
-	vertex_buffer[0].h_position = p0;
-	vertex_buffer[0].color = r;
-
-	vertex_buffer[1].h_position = p1;
-	vertex_buffer[1].color = g;
-
-	vertex_buffer[2].h_position = p2;
-	vertex_buffer[2].color = b;
-	
-	vertex_buffer[3].h_position = p3;
-	vertex_buffer[3].color = w;
-
-    index_buffer[0] = 0u;
-	index_buffer[1] = 1u;
-	index_buffer[2] = 2u;
-    
-    index_buffer[3] = 0u;
-	index_buffer[4] = 2u;
-	index_buffer[5] = 3u;
-
-	*out_vertex_data = (vertex_data*)malloc(sizeof(vertex_data));
-	(*out_vertex_data)->ib_size = indices_count;
-	(*out_vertex_data)->vb_size = vertices_count;
-	(*out_vertex_data)->ib = index_buffer;
-	(*out_vertex_data)->vb = vertex_buffer;
-}
+extern uint8_t* VERTEX_GPU_VRAM;
+extern uint32_t mem_offset_ptr;
 
 void ProcessVertices(vertex_pipeline_desc* pipeline_desc, vertex_data* in_data, vertex_data** out_data)
 {
-    //
-    // Handle VRAM
-    //
-    mem_offset_ptr = CLEAR_VRAM_OFFSET;
-    if (!VERTEX_GPU_VRAM)
-        VERTEX_GPU_VRAM = (uint8_t*)malloc(VRAM_MAX_SIZE);
-    
 	//
     // Linear Coordinates Space
     //
-    (*out_data) = (vertex_data*)ALLOC_VRAM(sizeof(vertex_data));
+    (*out_data) = (vertex_data*)ALLOC_VRAM(sizeof(vertex_data), mem_offset_ptr);
     Mat4x4 transform_matrix = MAT4X4_IDENTITY_MATRIX;
-
-
 
     //
     // Homogenous/Projective Coordinates Space
     //
-
 
 
     //
@@ -136,7 +64,7 @@ void ProcessVertices(vertex_pipeline_desc* pipeline_desc, vertex_data* in_data, 
     // Process Vertices
     //
     (*out_data)->vb_size = in_data->vb_size;
-    (*out_data)->vb = (Vertex*)ALLOC_VRAM((*out_data)->vb_size * sizeof(Vertex));
+    (*out_data)->vb = (Vertex*)ALLOC_VRAM((*out_data)->vb_size * sizeof(Vertex), mem_offset_ptr);
 
     for (uint32_t i = 0u; i < (*out_data)->vb_size; ++i) {
         (*out_data)->vb[i].h_position = MulVecMat(&(in_data->vb[i].h_position), &transform_matrix);
@@ -148,7 +76,7 @@ void ProcessVertices(vertex_pipeline_desc* pipeline_desc, vertex_data* in_data, 
     // Process Indices
     //
 	(*out_data)->ib_size = in_data->ib_size;
-	(*out_data)->ib = (uint32_t*)ALLOC_VRAM((*out_data)->ib_size * sizeof(uint32_t));
+	(*out_data)->ib = (uint32_t*)ALLOC_VRAM((*out_data)->ib_size * sizeof(uint32_t), mem_offset_ptr);
     
     // Copy Indices
     memcpy((void*)(*out_data)->ib, (const void*)in_data->ib, in_data->ib_size * sizeof(uint32_t));
@@ -171,11 +99,7 @@ uint32_t AssemblyTriangles(vertex_data* input_data, Triangle** output_data)
     {
         // our triangle count
         assert((ib_size % 3) == 0);
-        // Note (Gabriel): This code section bellow is totally wastefull, is not a good
-        // practice to allocate this memory every time I issue a draw (~= 30 times per second).
-        // In the future implement a adaptive local store so we can always grab a "free" pointer
-        // to write data to it (a fake VRAM, kinda).
-        (*output_data) = (Triangle*)malloc(sizeof(Triangle) * (ib_size / 3u));
+        (*output_data) = (Triangle*)ALLOC_VRAM(sizeof(Triangle) * (ib_size / 3u), mem_offset_ptr);
 
         // generate triangles folliwing CCW winding order
         for (uint32_t i = 0u; i < ib_size; i += 3u) {
@@ -236,5 +160,3 @@ uint32_t AssemblyTriangles(vertex_data* input_data, Triangle** output_data)
     else
         return -1;
 }
-
-

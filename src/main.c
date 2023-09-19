@@ -32,6 +32,7 @@
 #include "../include/vertex_stage.h"
 #include "../include/raster_stage.h"
 #include "../include/math3D.h"
+#include "../include/vram.h"
 
 // GPL message
 static const char* gpl_license[] =
@@ -44,6 +45,14 @@ static const char* gpl_license[] =
 
 #define WINDOW_WIDTH 1024u
 #define WINDOW_HEIGHT 640u
+
+//
+// Act as the GPU vide0 memory
+//
+uint8_t* VERTEX_GPU_VRAM;
+uint32_t mem_offset_ptr = 0u;
+
+void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_data);
 
 int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		PWSTR pCmdLine, int32_t nCmdShow)
@@ -62,6 +71,10 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	float dx = 0.0f;
 	float dy = 0.0f;
+
+	// Alloc VRAM space
+	VERTEX_GPU_VRAM = (uint8_t*)malloc(VRAM_MAX_SIZE);
+	assert(VERTEX_GPU_VRAM);
 
 	// GPL message
 	//printf("%s %s %s %s", gpl_license[0], gpl_license[1], gpl_license[2], gpl_license[3]);
@@ -154,11 +167,74 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		// Swap Buffers
 		InvalidateRect(sb->hwnd, NULL, 1u);
 		UpdateWindow(sb->hwnd);
+
+		// Clear VRAM
+		mem_offset_ptr = CLEAR_VRAM_OFFSET;
 	}
 
 	//
 	// Free Resourcers
 	//
-	CloseWin32(sb);
+	CloseWin32(sb); free(VERTEX_GPU_VRAM);
 	return 0x0;
+}
+
+// This will be changed later to something decent
+void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_data)
+{
+    //
+    // Parse file
+    //
+    uint32_t vertices_count = 4u;
+    uint32_t indices_count = 6u;
+
+    //
+    // Init mem
+    //
+    Vertex* vertex_buffer = (Vertex*)malloc(sizeof(Vertex) * vertices_count);
+    uint32_t* index_buffer = (uint32_t*)malloc(sizeof(uint32_t) * indices_count);
+
+    //
+    // Populate with data
+    //
+
+	// ADD A TEST QUAD
+		
+	// position
+	Vec4 p0 = { -0.5f, -0.5f, 0.0f, 1.0f};
+	Vec4 p1 = {  0.5f, -0.5f, 0.0f, 1.0f};
+	Vec4 p2 = {  0.5f,  0.5f, 0.0f, 1.0f};
+	Vec4 p3 = { -0.5f,  0.5f, 0.0f, 1.0f};
+
+	// color
+	Vec3 r = { 1.0f, 0.0f, 0.0f };
+	Vec3 g = { 0.0f, 1.0f, 0.0f };
+	Vec3 b = { 0.0f, 0.0f, 1.0f };
+	Vec3 w = { 1.0f, 1.0f, 1.0f };
+	
+	vertex_buffer[0].h_position = p0;
+	vertex_buffer[0].color = r;
+
+	vertex_buffer[1].h_position = p1;
+	vertex_buffer[1].color = g;
+
+	vertex_buffer[2].h_position = p2;
+	vertex_buffer[2].color = b;
+	
+	vertex_buffer[3].h_position = p3;
+	vertex_buffer[3].color = w;
+
+    index_buffer[0] = 0u;
+	index_buffer[1] = 1u;
+	index_buffer[2] = 2u;
+    
+    index_buffer[3] = 0u;
+	index_buffer[4] = 2u;
+	index_buffer[5] = 3u;
+
+	*out_vertex_data = (vertex_data*)malloc(sizeof(vertex_data));
+	(*out_vertex_data)->ib_size = indices_count;
+	(*out_vertex_data)->vb_size = vertices_count;
+	(*out_vertex_data)->ib = index_buffer;
+	(*out_vertex_data)->vb = vertex_buffer;
 }

@@ -67,4 +67,6 @@ static inline uint32_t rgba_SIMD_float_to_uint32(__m128 color_rgba)
         _mm_cvtsi128_si32(_mm_srli_si128(int_rgba, 8)));       // Blue Chanell
 }
 
+
+
 #endif /* INCLUDE_UTILS_H_ */
