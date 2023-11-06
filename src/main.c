@@ -71,6 +71,7 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	float dx = 0.0f;
 	float dy = 0.0f;
+	float delta = 0.01f;
 
 	// Alloc VRAM space
 	VERTEX_GPU_VRAM = (uint8_t*)malloc(VRAM_MAX_SIZE);
@@ -93,6 +94,7 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		//
 		// Process OS Stuff
 		//
+		dx = 0.0f; dy = 0.0f; 
 		MSG msg;
 		while(PeekMessage(&msg, sb->hwnd, 0u, 0u, PM_REMOVE))
 		{
@@ -101,14 +103,14 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			 case WM_QUIT: running = 0u; break;
 			 case WM_KEYDOWN:
 				 {
-					if (msg.wParam == VK_LEFT)
-						dx -= 10.777f;
-					else if (msg.wParam == VK_RIGHT)
-						dx += 10.777f;
-					else if (msg.wParam == VK_UP)
-						dy += 10.777f;
-					else if (msg.wParam == VK_DOWN)
-						dy -= 10.777f;
+					 if (msg.wParam == VK_LEFT)
+						 dx = -delta;
+					 else if (msg.wParam == VK_RIGHT)
+						 dx = delta;
+					 else if (msg.wParam == VK_UP)
+						 dy = delta;
+					 else if (msg.wParam == VK_DOWN)
+						 dy = -delta;
 				 }
 			 default:
 				{
@@ -117,6 +119,12 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 				}
 			 
 			}
+		}
+
+		// update vertices position
+		for (int i = 0u; i < input_vertices->vb_size; i++) {
+			input_vertices->vb[i].position.x += dx;
+			input_vertices->vb[i].position.y += dy;
 		}
 
 		// ----------------------------------------------

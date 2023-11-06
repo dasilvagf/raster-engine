@@ -67,6 +67,21 @@ static inline uint32_t rgba_SIMD_float_to_uint32(__m128 color_rgba)
         _mm_cvtsi128_si32(_mm_srli_si128(int_rgba, 8)));       // Blue Chanell
 }
 
+static inline void draw_horizontal_line(uint32_t y, uint32_t x0, uint32_t x1, uint32_t argb_color, 
+    uint32_t width, uint32_t height, uint32_t* color_buffer)
+{
+    assert(y < height && x0 < width && x1 < width && color_buffer);
+    for (uint32_t i = 0u; i < (x1 - x0); ++i)
+        color_buffer[y * width + (x0 + i)] = argb_color;
+}
 
+static inline void draw_vertical_line(uint32_t x, uint32_t y0, uint32_t y1, uint32_t argb_color, 
+    uint32_t width, uint32_t height, uint32_t* color_buffer)
+{
+    assert(x < width && y0 < height && y1 < height && color_buffer);
+    // DEBUG ONLY: Slow! we gonna miss some cache goodness on this one! aggahhh! :( 
+    for (uint32_t i = 0u; i < (y1 - y0); ++i)
+        color_buffer[((y0 + i) * width) + x] = argb_color;
+}
 
 #endif /* INCLUDE_UTILS_H_ */

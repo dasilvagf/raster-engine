@@ -35,6 +35,17 @@ static float* g_depth_buffer = NULL;
 extern uint8_t* VERTEX_GPU_VRAM;
 extern uint32_t mem_offset_ptr;
 
+// enable clipping debugging functionality
+#if (1 && _DEBUG)
+#define DEBUG_CLIPPING_BOUNDS 
+#endif
+
+#ifdef DEBUG_CLIPPING_BOUNDS
+#define CLIP_OFFSET 50u
+#else
+#define CLIP_OFFSET 0u
+#endif
+
 // where the actual magic happens
 void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri_simd[4]);
 
@@ -65,26 +76,18 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 
 		// are we completly outside the viweport?
 		is_outside =
-			// (P2 - P1)
-			(tb[t].p2.x >= (float)width && tb[t].p1.x >= (float)width) ||
-			(tb[t].p2.x < 0.0f && tb[t].p1.x < 0.0f) ||
-			(tb[t].p2.y >= (float)height && tb[t].p1.y >= (float)width) ||
-			(tb[t].p2.y < 0.0f && tb[t].p1.y < 0.0f) &&
-			// (P0 - P2)	
-			(tb[t].p0.x >= (float)width && tb[t].p2.x >= (float)width) ||
-			(tb[t].p0.x < 0.0f && tb[t].p2.x < 0.0f) ||
-			(tb[t].p0.y >= (float)height && tb[t].p2.y >= (float)width) ||
-			(tb[t].p0.y < 0.0f && tb[t].p2.y < 0.0f) &&
-			// (P1 - P0)	
-			(tb[t].p1.x >= (float)width && tb[t].p0.x >= (float)width) ||
-			(tb[t].p1.x < 0.0f && tb[t].p0.x < 0.0f) ||
-			(tb[t].p1.y >= (float)height && tb[t].p0.y >= (float)width) ||
-			(tb[t].p1.y < 0.0f && tb[t].p0.y < 0.0f);
+			// x-axis
+			(tb[t].p0.x >= (float)(width - CLIP_OFFSET) && tb[t].p1.x >= (float)(width - CLIP_OFFSET) && tb[t].p2.x >= (float)(width - CLIP_OFFSET)) ||
+			(tb[t].p0.x < (0.0f + CLIP_OFFSET) && tb[t].p1.x < (0.0f + CLIP_OFFSET) && tb[t].p2.x < (0.0f + CLIP_OFFSET)) ||
+			// y-axis	
+			(tb[t].p0.y >= (float)(height - CLIP_OFFSET) && tb[t].p1.y >= (float)(height - CLIP_OFFSET) && tb[t].p2.y >= (float)(height - CLIP_OFFSET)) ||
+			(tb[t].p0.y < (0.0f + CLIP_OFFSET) && tb[t].p1.y < (0.0f + CLIP_OFFSET) && tb[t].p2.y < (0.0f + CLIP_OFFSET));
 
 		// test against viewport and back-face culling (CCW is front)
 		if (!is_outside && tri_area2 > 0.0f)
 		{
 			// use Cohem-Sutherland to check if we gonna need to clip
+
 
 			// Oh no! we gonna need to clip
 			if (needs_clippings)
@@ -97,6 +100,14 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			}
 		}
 	}
+
+	// Draw viewport only if we are debugging clipping functionality
+#ifdef DEBUG_CLIPPING_BOUNDS
+	draw_horizontal_line(CLIP_OFFSET, CLIP_OFFSET, width - CLIP_OFFSET, 0xFFFF0000, width, height, sb->surface_buffer);
+	draw_horizontal_line(height - CLIP_OFFSET, CLIP_OFFSET, width - CLIP_OFFSET, 0xFFFF0000, width, height, sb->surface_buffer);
+	draw_vertical_line(CLIP_OFFSET, CLIP_OFFSET, height - CLIP_OFFSET, 0xFFFF0000, width, height, sb->surface_buffer);
+	draw_vertical_line(width - CLIP_OFFSET, CLIP_OFFSET, height - CLIP_OFFSET, 0xFFFF0000, width, height, sb->surface_buffer);
+#endif
 }
 
 // no need to worry about code bloat for this project 
