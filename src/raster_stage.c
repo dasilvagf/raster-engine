@@ -65,38 +65,38 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 
 	// for each of our triangles
 	for (uint32_t t = 0u; t < tb_size; ++t){
+		Triangle* tri = &tb[t];
 
 		// triangle area (multipled by 2)
-		float tri_area2 = OrientedArea(tb[t].p0, tb[t].p1, tb[t].p2);
+		float tri_area2 = OrientedArea(tri->p0, tri->p1, tri->p2);
 		float inv_tri_simd[] = {1.0f/ tri_area2, 1.0f/ tri_area2, 0.0f, 0.0f};
 
 		// clipping
-		uint32_t is_outside = 0u;
-		uint32_t needs_clippings = 0u;
+		uint32_t x_min = CLIP_OFFSET;
+		uint32_t x_max = width - CLIP_OFFSET;
+		uint32_t y_min = CLIP_OFFSET;
+		uint32_t y_max = height - CLIP_OFFSET;
 
-		// are we completly outside the viweport?
-		is_outside =
-			// x-axis
-			(tb[t].p0.x >= (float)(width - CLIP_OFFSET) && tb[t].p1.x >= (float)(width - CLIP_OFFSET) && tb[t].p2.x >= (float)(width - CLIP_OFFSET)) ||
-			(tb[t].p0.x < (0.0f + CLIP_OFFSET) && tb[t].p1.x < (0.0f + CLIP_OFFSET) && tb[t].p2.x < (0.0f + CLIP_OFFSET)) ||
-			// y-axis	
-			(tb[t].p0.y >= (float)(height - CLIP_OFFSET) && tb[t].p1.y >= (float)(height - CLIP_OFFSET) && tb[t].p2.y >= (float)(height - CLIP_OFFSET)) ||
-			(tb[t].p0.y < (0.0f + CLIP_OFFSET) && tb[t].p1.y < (0.0f + CLIP_OFFSET) && tb[t].p2.y < (0.0f + CLIP_OFFSET));
-
-		// test against viewport and back-face culling (CCW is front)
-		if (!is_outside && tri_area2 > 0.0f)
+		// test back-face culling (CCW is front)
+		if (tri_area2 > 0.0f)
 		{
 			// use Cohem-Sutherland to check if we gonna need to clip
+			uint32_t outcode_p0 = (((tri->p0.y > (float)y_max) << 3) & ((tri->p0.y < (float)y_min) << 2) & ((tri->p0.x > (float)x_max) << 1) & ((tri->p0.x < (float)x_min)));
+			uint32_t outcode_p1 = (((tri->p1.y > (float)y_max) << 3) & ((tri->p1.y < (float)y_min) << 2) & ((tri->p1.x > (float)x_max) << 1) & ((tri->p1.x < (float)x_min)));
+			uint32_t outcode_p2 = (((tri->p2.y > (float)y_max) << 3) & ((tri->p2.y < (float)y_min) << 2) & ((tri->p2.x > (float)x_max) << 1) & ((tri->p2.x < (float)x_min)));
 
+			uint32_t is_inside = !((outcode_p0 | outcode_p1) && (outcode_p1 | outcode_p2) && (outcode_p2 | outcode_p0));
+			uint32_t is_outside = 0;
 
-			// Oh no! we gonna need to clip
-			if (needs_clippings)
+			// no need to clip or generate new triangles, thus we just render the original triangle
+			if (is_inside)
+			{
+				RasterTriangle(sb, tri, inv_tri_simd);
+			}
+			// If the triangle isn't outside we gonna need to clip it! :(
+			else if (!is_outside)
 			{
 
-			}
-			else
-			{	// no need to clip or generate new triangles, thus we just render the original triangle
-				RasterTriangle(sb, &tb[t], inv_tri_simd);
 			}
 		}
 	}
