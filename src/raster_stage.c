@@ -53,6 +53,12 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 {
 	uint32_t width = sb->width;
 	uint32_t height = sb->height;
+	
+	// clipping
+	uint32_t x_min = CLIP_OFFSET;
+	uint32_t x_max = width - CLIP_OFFSET;
+	uint32_t y_min = CLIP_OFFSET;
+	uint32_t y_max = height - CLIP_OFFSET;
 
 	if (!g_depth_buffer)
 		g_depth_buffer = (float*)malloc(sizeof(float) * width * height);
@@ -71,21 +77,15 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 		float tri_area2 = OrientedArea(tri->p0, tri->p1, tri->p2);
 		float inv_tri_simd[] = {1.0f/ tri_area2, 1.0f/ tri_area2, 0.0f, 0.0f};
 
-		// clipping
-		uint32_t x_min = CLIP_OFFSET;
-		uint32_t x_max = width - CLIP_OFFSET;
-		uint32_t y_min = CLIP_OFFSET;
-		uint32_t y_max = height - CLIP_OFFSET;
-
 		// test back-face culling (CCW is front)
 		if (tri_area2 > 0.0f)
 		{
 			// use Cohem-Sutherland to check if we gonna need to clip
-			uint32_t outcode_p0 = (((tri->p0.y > (float)y_max) << 3) & ((tri->p0.y < (float)y_min) << 2) & ((tri->p0.x > (float)x_max) << 1) & ((tri->p0.x < (float)x_min)));
-			uint32_t outcode_p1 = (((tri->p1.y > (float)y_max) << 3) & ((tri->p1.y < (float)y_min) << 2) & ((tri->p1.x > (float)x_max) << 1) & ((tri->p1.x < (float)x_min)));
-			uint32_t outcode_p2 = (((tri->p2.y > (float)y_max) << 3) & ((tri->p2.y < (float)y_min) << 2) & ((tri->p2.x > (float)x_max) << 1) & ((tri->p2.x < (float)x_min)));
+			uint32_t outcode_p0 = (((tri->p0.y > (float)y_max) << 3) | ((tri->p0.y < (float)y_min) << 2) | ((tri->p0.x > (float)x_max) << 1) | ((tri->p0.x < (float)x_min)));
+			uint32_t outcode_p1 = (((tri->p1.y > (float)y_max) << 3) | ((tri->p1.y < (float)y_min) << 2) | ((tri->p1.x > (float)x_max) << 1) | ((tri->p1.x < (float)x_min)));
+			uint32_t outcode_p2 = (((tri->p2.y > (float)y_max) << 3) | ((tri->p2.y < (float)y_min) << 2) | ((tri->p2.x > (float)x_max) << 1) | ((tri->p2.x < (float)x_min)));
 
-			uint32_t is_inside = !((outcode_p0 | outcode_p1) && (outcode_p1 | outcode_p2) && (outcode_p2 | outcode_p0));
+			uint32_t is_inside = !((outcode_p0 | outcode_p1) || (outcode_p1 | outcode_p2) || (outcode_p2 | outcode_p0));
 			uint32_t is_outside = 0;
 
 			// no need to clip or generate new triangles, thus we just render the original triangle
