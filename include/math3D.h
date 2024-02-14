@@ -33,6 +33,12 @@
 #include "SIMD.h"
 
 //
+// Constants
+//
+#define EPSILON_FLOAT 0.00001f
+
+
+//
 //	Definitions
 //
 
@@ -209,7 +215,5 @@ static inline __m128 DotProduct_SIMD(__m128 vectors[8])
 	CdotD = _mm_hadd_ps(EdotF, GdotH);
 	return  _mm_hadd_ps(AdotB, CdotD);
 }
-
-
 
 #endif /* INCLUDE_MATH3D_H_ */

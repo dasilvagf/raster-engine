@@ -209,10 +209,10 @@ void LoadVerticesDataFromDisk(const char* filename, vertex_data** out_vertex_dat
 	// ADD A TEST QUAD
 		
 	// position
-	Vec4 p0 = { -0.5f, -0.5f, 0.0f, 1.0f};
-	Vec4 p1 = {  0.5f, -0.5f, 0.0f, 1.0f};
-	Vec4 p2 = {  0.5f,  0.5f, 0.0f, 1.0f};
-	Vec4 p3 = { -0.5f,  0.5f, 0.0f, 1.0f};
+	Vec4 p0 = { -0.25f, -0.25f, 0.0f, 1.0f};
+	Vec4 p1 = {  0.25f, -0.25f, 0.0f, 1.0f};
+	Vec4 p2 = {  0.25f,  0.25f, 0.0f, 1.0f};
+	Vec4 p3 = { -0.25f,  0.25f, 0.0f, 1.0f};
 
 	// color
 	Vec3 r = { 1.0f, 0.0f, 0.0f };

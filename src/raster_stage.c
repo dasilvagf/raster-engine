@@ -41,13 +41,16 @@ extern uint32_t mem_offset_ptr;
 #endif
 
 #ifdef DEBUG_CLIPPING_BOUNDS
-#define CLIP_OFFSET 50u
+#define CLIP_OFFSET 200u
 #else
 #define CLIP_OFFSET 0u
 #endif
 
 // where the actual magic happens
 void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri_simd[4]);
+
+// clip those triangles which witnessed too much - muhahaha (search for The Silence of the Clamps if you didn't got the joke!) 
+Triangle* ClipTriangle(Triangle* in_tb, uint32_t* n_out_triangles);
 
 void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 {
@@ -75,28 +78,41 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 
 		// triangle area (multipled by 2)
 		float tri_area2 = OrientedArea(tri->p0, tri->p1, tri->p2);
-		float inv_tri_simd[] = {1.0f/ tri_area2, 1.0f/ tri_area2, 0.0f, 0.0f};
 
 		// test back-face culling (CCW is front)
 		if (tri_area2 > 0.0f)
 		{
+			// for barycentric interpolation
+			float inv_tri_simd[] = {1.0f/ tri_area2, 1.0f/ tri_area2, 0.0f, 0.0f};
+
 			// use Cohem-Sutherland to check if we gonna need to clip
 			uint32_t outcode_p0 = (((tri->p0.y > (float)y_max) << 3) | ((tri->p0.y < (float)y_min) << 2) | ((tri->p0.x > (float)x_max) << 1) | ((tri->p0.x < (float)x_min)));
 			uint32_t outcode_p1 = (((tri->p1.y > (float)y_max) << 3) | ((tri->p1.y < (float)y_min) << 2) | ((tri->p1.x > (float)x_max) << 1) | ((tri->p1.x < (float)x_min)));
 			uint32_t outcode_p2 = (((tri->p2.y > (float)y_max) << 3) | ((tri->p2.y < (float)y_min) << 2) | ((tri->p2.x > (float)x_max) << 1) | ((tri->p2.x < (float)x_min)));
 
+			// check for trivial rejection (best cases)
 			uint32_t is_inside = !((outcode_p0 | outcode_p1) || (outcode_p1 | outcode_p2) || (outcode_p2 | outcode_p0));
-			uint32_t is_outside = 0;
+			uint32_t is_outside = ((outcode_p0 & outcode_p1) && (outcode_p1 & outcode_p2) && (outcode_p2 & outcode_p0));
 
 			// no need to clip or generate new triangles, thus we just render the original triangle
 			if (is_inside)
-			{
 				RasterTriangle(sb, tri, inv_tri_simd);
-			}
-			// If the triangle isn't outside we gonna need to clip it! :(
+			// If the triangle isn't outside we gonna need to clip it! :( [SLOW]
 			else if (!is_outside)
 			{
+				// Clip and generate new triangles
+				uint32_t n_clip_tri = 0u;
+				Triangle* clip_tri = ClipTriangle(tri, &n_clip_tri);
 
+				for (uint32_t tc = 0u; tc < n_clip_tri; ++tc) {
+					// triangle area (multipled by 2)
+					tri_area2 = OrientedArea(clip_tri[tc].p0, clip_tri[tc].p1, clip_tri[tc].p2);
+					assert(tri_area2 < 0.0f);
+					inv_tri_simd[0] = inv_tri_simd[1] = 1.0f / tri_area2;
+
+					// Raster the new triangles
+					RasterTriangle(sb, &clip_tri[tc], inv_tri_simd);
+				}
 			}
 		}
 	}
@@ -273,4 +289,12 @@ void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri
 		column_e = _mm_sub_ps(column_e, const_b);
 		curr_e = column_e;
 	}
+}
+
+Triangle* ClipTriangle(Triangle* in_tb, uint32_t* n_out_triangles)
+{
+	n_out_triangles = 0u;
+
+
+	return NULL;
 }
