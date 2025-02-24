@@ -46,11 +46,23 @@ extern uint32_t mem_offset_ptr;
 #define CLIP_OFFSET 0u
 #endif
 
+// maximum number of vertices allowed by a clipped triangle
+#define MAX_VERTICES 10u
+
+struct clip_rectangle_t
+{
+	uint32_t	
+		min_x,
+		min_y,
+		max_x,
+		max_y;
+}clip_rectangle;
+
 // where the actual magic happens
 void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri_simd[4]);
 
 // clip those triangles which witnessed too much - muhahaha (search for The Silence of the Clamps if you didn't got the joke!) 
-Triangle* ClipTriangle(Triangle* in_tb, uint32_t* n_out_triangles);
+Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint32_t shuterland_outcodes[3], uint32_t* n_out_triangles);
 
 void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 {
@@ -58,10 +70,12 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 	uint32_t height = sb->height;
 	
 	// clipping
-	uint32_t x_min = CLIP_OFFSET;
-	uint32_t x_max = width - CLIP_OFFSET;
-	uint32_t y_min = CLIP_OFFSET;
-	uint32_t y_max = height - CLIP_OFFSET;
+	struct clip_rectangle_t clip_rect = { CLIP_OFFSET, CLIP_OFFSET, width - CLIP_OFFSET, height - CLIP_OFFSET };
+
+	//uint32_t x_min = CLIP_OFFSET;
+	//uint32_t x_max = width - CLIP_OFFSET;
+	//uint32_t y_min = CLIP_OFFSET;
+	//uint32_t y_max = height - CLIP_OFFSET;
 
 	if (!g_depth_buffer)
 		g_depth_buffer = (float*)malloc(sizeof(float) * width * height);
@@ -86,9 +100,9 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			float inv_tri_simd[] = {1.0f/ tri_area2, 1.0f/ tri_area2, 0.0f, 0.0f};
 
 			// use Cohem-Sutherland to check if we gonna need to clip
-			uint32_t outcode_p0 = (((tri->p0.y > (float)y_max) << 3) | ((tri->p0.y < (float)y_min) << 2) | ((tri->p0.x > (float)x_max) << 1) | ((tri->p0.x < (float)x_min)));
-			uint32_t outcode_p1 = (((tri->p1.y > (float)y_max) << 3) | ((tri->p1.y < (float)y_min) << 2) | ((tri->p1.x > (float)x_max) << 1) | ((tri->p1.x < (float)x_min)));
-			uint32_t outcode_p2 = (((tri->p2.y > (float)y_max) << 3) | ((tri->p2.y < (float)y_min) << 2) | ((tri->p2.x > (float)x_max) << 1) | ((tri->p2.x < (float)x_min)));
+			uint32_t outcode_p0 = (((tri->p0.y > (float)clip_rect.max_y) << 3) | ((tri->p0.y < (float)clip_rect.min_y) << 2) | ((tri->p0.x > (float)clip_rect.max_x) << 1) | ((tri->p0.x < (float)clip_rect.min_x)));
+			uint32_t outcode_p1 = (((tri->p1.y > (float)clip_rect.max_y) << 3) | ((tri->p1.y < (float)clip_rect.min_y) << 2) | ((tri->p1.x > (float)clip_rect.max_x) << 1) | ((tri->p1.x < (float)clip_rect.min_x)));
+			uint32_t outcode_p2 = (((tri->p2.y > (float)clip_rect.max_y) << 3) | ((tri->p2.y < (float)clip_rect.min_y) << 2) | ((tri->p2.x > (float)clip_rect.max_x) << 1) | ((tri->p2.x < (float)clip_rect.min_x)));
 
 			// check for trivial rejection (best cases)
 			uint32_t is_inside = !((outcode_p0 | outcode_p1) || (outcode_p1 | outcode_p2) || (outcode_p2 | outcode_p0));
@@ -97,12 +111,13 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			// no need to clip or generate new triangles, thus we just render the original triangle
 			if (is_inside)
 				RasterTriangle(sb, tri, inv_tri_simd);
-			// If the triangle isn't outside we gonna need to clip it! :( [SLOW]
+			// if the triangle isn't outside we gonna need to clip it! :( [SLOW]
 			else if (!is_outside)
 			{
 				// Clip and generate new triangles
 				uint32_t n_clip_tri = 0u;
-				Triangle* clip_tri = ClipTriangle(tri, &n_clip_tri);
+				uint32_t outcodes[] = { outcode_p0, outcode_p1, outcode_p2 };
+				Triangle* clip_tri = ClipTriangle(&clip_rect, tri, outcodes, &n_clip_tri);
 
 				for (uint32_t tc = 0u; tc < n_clip_tri; ++tc) {
 					// triangle area (multipled by 2)
@@ -113,6 +128,8 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 					// Raster the new triangles
 					RasterTriangle(sb, &clip_tri[tc], inv_tri_simd);
 				}
+
+				free(clip_tri);
 			}
 		}
 	}
@@ -291,10 +308,86 @@ void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri
 	}
 }
 
-Triangle* ClipTriangle(Triangle* in_tb, uint32_t* n_out_triangles)
+Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint32_t shuterland_outcodes[3], uint32_t* n_out_triangles)
 {
 	n_out_triangles = 0u;
+	Triangle* tri_out = NULL;
+
+	//
+	// vertices bucket
+	//
+	Vec2 vertices_out[MAX_VERTICES];
+	uint32_t vertices_outcode[MAX_VERTICES];
+
+	vertices_out[0] = in_tb->p0;
+	vertices_out[1] = in_tb->p1;
+	vertices_out[2] = in_tb->p2;
+
+	vertices_outcode[0] = shuterland_outcodes[0];
+	vertices_outcode[1] = shuterland_outcodes[1];
+	vertices_outcode[2] = shuterland_outcodes[2];
+
+	//
+	// sutherland-hodgman
+	//
+	uint32_t n_vertices_out = 3u;
+	uint32_t curr_vertex_out = 0u;
+
+	// loop through the four edges of the clipping box
+	for (uint32_t e = 0u; e < 4; ++e) {
+		// left edge (0001) - right edge (0010) - bottom edge (0100) - top edge (1000)
+		uint32_t edge = 0x1 << e;
+
+		// clip against the current edge
+		for (uint32_t v = 0u; v < n_vertices_out; ++v) {
+
+			// create polygon edge
+			Vec2 p0 = vertices_out[v];
+			Vec2 p1 = (v == n_vertices_out - 1u) ? vertices_out[0] /* last edge */ : vertices_out[v + 1];
+
+			// do we intersect the current clip edge?
+			if (vertices_outcode[v] & edge)
+			{
+				if (edge == 0x1) // left
+				{
+					curr_vertex_out
+				}
+				else if (edge == (0x1 << 1)) // right
+				{
+
+				}
+				else if (edge == (0x1 << 2)) // bottom
+				{
+
+				}
+				else // top
+				{
+
+				}
+			}
+		}
+	}
+
+	//
+	// fan triangulation
+	//
+
+	// for this STEP FORGET I HAVE TRIANGLES
+	// ONLY THINK ABOUT POLYGONS vertices_out[i] -> vertices_out[i + 1] means an edge
+	// go clipping against the edges and there is it after bottom wedge we should be done!
 
 
+	//				Algorithm Overview
+	// 0 - create an output bucket of Vertices
+	// 1 - for each edge of the clipping rectangle
+	//		1.1 - clip against each edge of current polygon (it may actually not be a triangle at this point)
+	//		1.2 - add the output vertice in case it is in and continue with it as v0, in a reetrant form
+	// 2 - run a triangulization algorithm on the vertices in the output buccket
+	//		2.1 - for now, lets go with the fan algorithm
+	// 3 - return the new triangles
+	
+
+
+	assert(tri_out);
 	return NULL;
 }
