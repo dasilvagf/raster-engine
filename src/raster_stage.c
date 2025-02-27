@@ -47,7 +47,7 @@ extern uint32_t mem_offset_ptr;
 #endif
 
 // maximum number of vertices allowed by a clipped triangle
-#define MAX_VERTICES 10u
+#define MAX_VERTICES 6u
 
 struct clip_rectangle_t
 {
@@ -313,68 +313,83 @@ Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint
 	n_out_triangles = 0u;
 	Triangle* tri_out = NULL;
 
+	// clip rect aabb
+	const float rect_x_min = (float)clip_rect->min_x;
+	const float rect_x_max = (float)clip_rect->max_x;
+	const float rect_y_min = (float)clip_rect->min_y;
+	const float rect_y_max = (float)clip_rect->max_y;
+
 	//
 	// vertices bucket
 	//
-	Vec2 vertices_out[MAX_VERTICES];
-	uint32_t vertices_outcode[MAX_VERTICES];
+	Vec2 vertices_in[3];
+	vertices_in[0] = in_tb->p0;
+	vertices_in[1] = in_tb->p1;
+	vertices_in[2] = in_tb->p2;
 
-	vertices_out[0] = in_tb->p0;
-	vertices_out[1] = in_tb->p1;
-	vertices_out[2] = in_tb->p2;
-
+	uint32_t vertices_outcode[3];
 	vertices_outcode[0] = shuterland_outcodes[0];
 	vertices_outcode[1] = shuterland_outcodes[1];
 	vertices_outcode[2] = shuterland_outcodes[2];
 
+	Vec2 vertices_out[MAX_VERTICES];
 	//
 	// sutherland-hodgman
 	//
-	uint32_t n_vertices_out = 3u;
+	uint32_t n_vertices_out = 0u;
 	uint32_t curr_vertex_out = 0u;
 
-	// loop through the four edges of the clipping box
-	for (uint32_t e = 0u; e < 4; ++e) {
-		// left edge (0001) - right edge (0010) - bottom edge (0100) - top edge (1000)
-		uint32_t edge = 0x1 << e;
+	// clip triangle edges
+	for (uint32_t v = 0u; v < 3; ++v) {
+	
+		// create polygon edge
+		Vec2 p0 = vertices_in[v];
+		Vec2 p1 = (v == 2u) ? vertices_in[0] /* last edge */ : vertices_in[v + 1];
 
-		// clip against the current edge
-		for (uint32_t v = 0u; v < n_vertices_out; ++v) {
+		// edge linear factors
+		const float slope = (p1.y - p0.y) / (p1.x - p0.x);
+		const float const_factor = p0.y - slope * p0.x;
 
-			// create polygon edge
-			Vec2 p0 = vertices_out[v];
-			Vec2 p1 = (v == n_vertices_out - 1u) ? vertices_out[0] /* last edge */ : vertices_out[v + 1];
-
-			// do we intersect the current clip edge?
-			if (vertices_outcode[v] & edge)
-			{
-				if (edge == 0x1) // left
-				{
-					curr_vertex_out
-				}
-				else if (edge == (0x1 << 1)) // right
-				{
-
-				}
-				else if (edge == (0x1 << 2)) // bottom
-				{
-
-				}
-				else // top
-				{
-
-				}
-			}
+		// clip aginst rectangle
+		if (0x1 & vertices_outcode[v] /*left*/)
+		{
+			p0.x = rect_x_min;
+			p0.y = slope * rect_x_min + const_factor;
 		}
+		if (0x2 & vertices_outcode[v] /*right*/)
+		{
+			p1.x = rect_x_max;
+			p1.y = slope * rect_x_max + const_factor;
+		}
+		if (0x4 & vertices_outcode[v] /*bottom*/)
+		{
+			p0.x = (rect_y_min - const_factor) / slope;
+			p0.y = rect_y_min;
+		}
+		if (0x8 & vertices_outcode[v] /*top*/)
+		{
+			p1.x = (rect_y_max - const_factor) / slope;
+			p1.y = rect_y_max;
+		}
+
+		vertices_out[n_vertices_out] = p0;
+		vertices_out[n_vertices_out + 1u] = p1;
+		n_vertices_out += 2;
 	}
 
 	//
-	// fan triangulation
+	// triangulation
 	//
 
-	// for this STEP FORGET I HAVE TRIANGLES
-	// ONLY THINK ABOUT POLYGONS vertices_out[i] -> vertices_out[i + 1] means an edge
-	// go clipping against the edges and there is it after bottom wedge we should be done!
+	// any triangulation of a polygon with n vertices results in n - 2 triangles
+	// https://sites.cs.ucsb.edu/~suri/cs235/Triangulation.pdf
+	uint32_t n_triangles = n_vertices_out - 2;
+
+	// fan triangulation algorithm (maybe improve this later?)
+	Triangle* triangles_out = (Triangle*)malloc(sizeof(Triangle) * n_triangles);
+	for (uint32_t t = 0u; t < n_triangles; ++t) {
+
+	}
 
 
 	//				Algorithm Overview
@@ -387,7 +402,5 @@ Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint
 	// 3 - return the new triangles
 	
 
-
-	assert(tri_out);
-	return NULL;
+	return triangles_out;
 }
