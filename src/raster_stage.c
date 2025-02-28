@@ -310,7 +310,7 @@ void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri
 
 Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint32_t shuterland_outcodes[3], uint32_t* n_out_triangles)
 {
-	n_out_triangles = 0u;
+	*n_out_triangles = 0u;
 	Triangle* tri_out = NULL;
 
 	// clip rect aabb
@@ -327,12 +327,18 @@ Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint
 	vertices_in[1] = in_tb->p1;
 	vertices_in[2] = in_tb->p2;
 
+	Vec3 colors_in[3];
+	colors_in[0] = in_tb->c0;
+	colors_in[1] = in_tb->c1;
+	colors_in[2] = in_tb->c2;
+
 	uint32_t vertices_outcode[3];
 	vertices_outcode[0] = shuterland_outcodes[0];
 	vertices_outcode[1] = shuterland_outcodes[1];
 	vertices_outcode[2] = shuterland_outcodes[2];
 
 	Vec2 vertices_out[MAX_VERTICES];
+	Vec3 colors_out[MAX_VERTICES];
 	//
 	// sutherland-hodgman
 	//
@@ -342,38 +348,61 @@ Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint
 	// clip triangle edges
 	for (uint32_t v = 0u; v < 3; ++v) {
 	
-		// create polygon edge
+		// edge position
 		Vec2 p0 = vertices_in[v];
 		Vec2 p1 = (v == 2u) ? vertices_in[0] /* last edge */ : vertices_in[v + 1];
 
+		// edge colors
+		Vec3 c0 = colors_in[v];
+		Vec3 c1 = (v == 2u) ? colors_in[0] /* last edge */ : colors_in[v + 1];
+
 		// edge linear factors
-		const float slope = (p1.y - p0.y) / (p1.x - p0.x);
+		const float dy = p1.y - p0.y;
+		const float dx = p1.x - p0.x;
+		const float slope = dy / dx;
 		const float const_factor = p0.y - slope * p0.x;
 
+		// check special cases
+		const uint32_t is_edge_vertical = !isfinite(slope);
+		const uint32_t is_edge_horizontal = (fabs(dy) < EPSILON_FLOAT);
+
 		// clip aginst rectangle
-		if (0x1 & vertices_outcode[v] /*left*/)
+		if (!is_edge_horizontal & !is_edge_vertical)
 		{
-			p0.x = rect_x_min;
-			p0.y = slope * rect_x_min + const_factor;
-		}
-		if (0x2 & vertices_outcode[v] /*right*/)
-		{
-			p1.x = rect_x_max;
-			p1.y = slope * rect_x_max + const_factor;
-		}
-		if (0x4 & vertices_outcode[v] /*bottom*/)
-		{
-			p0.x = (rect_y_min - const_factor) / slope;
-			p0.y = rect_y_min;
-		}
-		if (0x8 & vertices_outcode[v] /*top*/)
-		{
-			p1.x = (rect_y_max - const_factor) / slope;
-			p1.y = rect_y_max;
+			if (0x1 & vertices_outcode[v] /*left*/)
+			{
+				p0.x = rect_x_min;
+				p0.y = slope * rect_x_min + const_factor;
+			}
+			if (0x2 & vertices_outcode[v] /*right*/)
+			{
+				p1.x = rect_x_max;
+				p1.y = slope * rect_x_max + const_factor;
+			}
+			if (0x4 & vertices_outcode[v] /*bottom*/)
+			{
+				p0.x = (rect_y_min - const_factor) / slope;
+				p0.y = rect_y_min;
+			}
+			if (0x8 & vertices_outcode[v] /*top*/)
+			{
+				p1.x = (rect_y_max - const_factor) / slope;
+				p1.y = rect_y_max;
+			}
 		}
 
+		// position
 		vertices_out[n_vertices_out] = p0;
 		vertices_out[n_vertices_out + 1u] = p1;
+
+		// color
+		colors_out[n_vertices_out] = c0;
+		colors_out[n_vertices_out + 1u] = c1;
+
+		// uv
+
+		// depth
+
 		n_vertices_out += 2;
 	}
 
@@ -383,12 +412,25 @@ Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint
 
 	// any triangulation of a polygon with n vertices results in n - 2 triangles
 	// https://sites.cs.ucsb.edu/~suri/cs235/Triangulation.pdf
-	uint32_t n_triangles = n_vertices_out - 2;
+	*n_out_triangles = n_vertices_out - 2;
 
 	// fan triangulation algorithm (maybe improve this later?)
-	Triangle* triangles_out = (Triangle*)malloc(sizeof(Triangle) * n_triangles);
-	for (uint32_t t = 0u; t < n_triangles; ++t) {
+	Triangle* triangles_out = (Triangle*)calloc(*n_out_triangles, sizeof(Triangle));
+	for (uint32_t t = 0u; t < *n_out_triangles; ++t) {
+		
+		// screen-space position
+		triangles_out[t].p0 = vertices_out[0u];
+		triangles_out[t].p1 = vertices_out[t + 1u];
+		triangles_out[t].p2 = vertices_out[t + 2u];
 
+		// color
+		triangles_out[t].c0 = colors_out[0u];
+		triangles_out[t].c1 = colors_out[t + 1u];
+		triangles_out[t].c2 = colors_out[t + 2u];
+
+		// uv coordinates
+
+		// depth
 	}
 
 
@@ -400,7 +442,6 @@ Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint
 	// 2 - run a triangulization algorithm on the vertices in the output buccket
 	//		2.1 - for now, lets go with the fan algorithm
 	// 3 - return the new triangles
-	
 
 	return triangles_out;
 }
