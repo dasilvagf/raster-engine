@@ -10,7 +10,7 @@
      - RASTER ENGINE					
 	===========================================================================
     
-    Copyright (C) 2023  Gabriel F. S. da Silva
+    Copyright (C) 2023-2026  Gabriel F. S. da Silva
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -64,6 +64,9 @@ void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri
 // clip those triangles which witnessed too much - muhahaha (search for The Silence of the Clamps if you didn't got the joke!) 
 Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint32_t shuterland_outcodes[3], uint32_t* n_out_triangles);
 
+// Remove repated Vertices from Polygon
+uint32_t VertexAlreadyExist(Vec2* vertices_buck, Vec2* curr_vertex);
+
 void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 {
 	uint32_t width = sb->width;
@@ -100,9 +103,14 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			float inv_tri_simd[] = {1.0f/ tri_area2, 1.0f/ tri_area2, 0.0f, 0.0f};
 
 			// use Cohem-Sutherland to check if we gonna need to clip
-			uint32_t outcode_p0 = (((tri->p0.y > (float)clip_rect.max_y) << 3) | ((tri->p0.y < (float)clip_rect.min_y) << 2) | ((tri->p0.x > (float)clip_rect.max_x) << 1) | ((tri->p0.x < (float)clip_rect.min_x)));
-			uint32_t outcode_p1 = (((tri->p1.y > (float)clip_rect.max_y) << 3) | ((tri->p1.y < (float)clip_rect.min_y) << 2) | ((tri->p1.x > (float)clip_rect.max_x) << 1) | ((tri->p1.x < (float)clip_rect.min_x)));
-			uint32_t outcode_p2 = (((tri->p2.y > (float)clip_rect.max_y) << 3) | ((tri->p2.y < (float)clip_rect.min_y) << 2) | ((tri->p2.x > (float)clip_rect.max_x) << 1) | ((tri->p2.x < (float)clip_rect.min_x)));
+			uint32_t outcode_p0 = (((tri->p0.y > (float)clip_rect.max_y) << 3) | ((tri->p0.y < (float)clip_rect.min_y) << 2) | 
+								   ((tri->p0.x > (float)clip_rect.max_x) << 1) | ((tri->p0.x < (float)clip_rect.min_x)));
+			
+			uint32_t outcode_p1 = (((tri->p1.y > (float)clip_rect.max_y) << 3) | ((tri->p1.y < (float)clip_rect.min_y) << 2) | 
+								   ((tri->p1.x > (float)clip_rect.max_x) << 1) | ((tri->p1.x < (float)clip_rect.min_x)));
+			
+			uint32_t outcode_p2 = (((tri->p2.y > (float)clip_rect.max_y) << 3) | ((tri->p2.y < (float)clip_rect.min_y) << 2) | 
+								   ((tri->p2.x > (float)clip_rect.max_x) << 1) | ((tri->p2.x < (float)clip_rect.min_x)));
 
 			// check for trivial rejection (best cases)
 			uint32_t is_inside = !((outcode_p0 | outcode_p1) || (outcode_p1 | outcode_p2) || (outcode_p2 | outcode_p0));
@@ -122,11 +130,13 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 				for (uint32_t tc = 0u; tc < n_clip_tri; ++tc) {
 					// triangle area (multipled by 2)
 					tri_area2 = OrientedArea(clip_tri[tc].p0, clip_tri[tc].p1, clip_tri[tc].p2);
-					assert(tri_area2 < 0.0f);
-					inv_tri_simd[0] = inv_tri_simd[1] = 1.0f / tri_area2;
+					if (tri_area2 > 0.0f)
+					{
+						inv_tri_simd[0] = inv_tri_simd[1] = 1.0f / tri_area2;
 
-					// Raster the new triangles
-					RasterTriangle(sb, &clip_tri[tc], inv_tri_simd);
+						// Raster the new triangles
+						RasterTriangle(sb, &clip_tri[tc], inv_tri_simd);
+					}
 				}
 
 				free(clip_tri);
@@ -148,10 +158,10 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri_simd[4])
 {
 	// traverse inside bounding box
-	uint32_t x_min = (uint32_t)roundf(tb->triBB.p0.x);
-	uint32_t y_min = (uint32_t)roundf(tb->triBB.p0.y);
-	uint32_t x_max = (uint32_t)roundf(tb->triBB.p1.x);
-	uint32_t y_max = (uint32_t)roundf(tb->triBB.p1.y);
+	uint32_t x_min = (uint32_t) roundf(tb->triBB.p0.x);
+	uint32_t y_min = (uint32_t) roundf(tb->triBB.p0.y);
+	uint32_t x_max = (uint32_t) roundf(tb->triBB.p1.x);
+	uint32_t y_max = (uint32_t) roundf(tb->triBB.p1.y);
 
 	//
 	// edge functions (constants)
@@ -225,16 +235,16 @@ void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri
 	//
 	
 	// rasterization
-	__m128 const_a = _mm_load_ps(a);
-	__m128 const_b = _mm_load_ps(b);
+	__m128 const_a  = _mm_load_ps(a);
+	__m128 const_b  = _mm_load_ps(b);
 	__m128 column_e = _mm_load_ps(e);
-	__m128 curr_e = _mm_load_ps(curr_edge);
+	__m128 curr_e	= _mm_load_ps(curr_edge);
 
 	// interpolation
 	__m128 inv_tri = _mm_load_ps(inv_tri_simd);
-	__m128 red = _mm_load_ps(c_r);
-	__m128 green = _mm_load_ps(c_g);
-	__m128 blue = _mm_load_ps(c_b);
+	__m128 red	   = _mm_load_ps(c_r);
+	__m128 green   = _mm_load_ps(c_g);
+	__m128 blue    = _mm_load_ps(c_b);
 	
 	// rasterizer inside the bounding-box
 	for (uint32_t i = y_max; i > y_min; i--) {
@@ -260,7 +270,7 @@ void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri
 			__m128 mask_edge_e = _mm_cmpeq_ps(curr_e, _mm_setzero_ps());
 
 			// curr_e == float4(0.0f) && ( curr_a > float4(0.0f) || curr_b < float4(0.0f) 
-			__m128 mask_edge = _mm_and_ps(mask_edge_e, _mm_or_ps(mask_edge_a, mask_edge_b));
+			__m128 mask_edge   = _mm_and_ps(mask_edge_e, _mm_or_ps(mask_edge_a, mask_edge_b));
 
 			//
 			// calculate barycentric coordinates
@@ -274,12 +284,12 @@ void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri
 			//
 
 			// multiplication part (ignore w component)
-			__m128 c_red = _mm_mul_ps(l, red);
+			__m128 c_red   = _mm_mul_ps(l, red);
 			__m128 c_green = _mm_mul_ps(l, green);
-			__m128 c_blue = _mm_mul_ps(l, blue);
+			__m128 c_blue  = _mm_mul_ps(l, blue);
 
 			// addition part
-			c_red = _mm_hadd_ps(c_red, c_green);
+			c_red  = _mm_hadd_ps(c_red, c_green);
 			c_blue = _mm_hadd_ps(c_blue, _mm_setzero_ps());
 
 			// final interpolated color
@@ -314,10 +324,10 @@ Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint
 	Triangle* tri_out = NULL;
 
 	// clip rect aabb
-	const float rect_x_min = (float)clip_rect->min_x;
-	const float rect_x_max = (float)clip_rect->max_x;
-	const float rect_y_min = (float)clip_rect->min_y;
-	const float rect_y_max = (float)clip_rect->max_y;
+	const float rect_x_min = (float) clip_rect->min_x;
+	const float rect_x_max = (float) clip_rect->max_x;
+	const float rect_y_min = (float) clip_rect->min_y;
+	const float rect_y_max = (float) clip_rect->max_y;
 
 	//
 	// vertices bucket
@@ -339,22 +349,27 @@ Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint
 
 	Vec2 vertices_out[MAX_VERTICES];
 	Vec3 colors_out[MAX_VERTICES];
+
 	//
 	// sutherland-hodgman
 	//
-	uint32_t n_vertices_out = 0u;
+	uint32_t n_vertices_out  = 0u;
 	uint32_t curr_vertex_out = 0u;
 
 	// clip triangle edges
-	for (uint32_t v = 0u; v < 3; ++v) {
+	for (uint32_t e = 0u; e < 3; ++e) {
 	
+		// edge indices
+		const uint32_t e_index0 = e;
+		const uint32_t e_index1 = (e == 2u) ? 0u : e + 1u;
+
 		// edge position
-		Vec2 p0 = vertices_in[v];
-		Vec2 p1 = (v == 2u) ? vertices_in[0] /* last edge */ : vertices_in[v + 1];
+		Vec2 p0 = vertices_in[e_index0];
+		Vec2 p1 = vertices_in[e_index1];
 
 		// edge colors
-		Vec3 c0 = colors_in[v];
-		Vec3 c1 = (v == 2u) ? colors_in[0] /* last edge */ : colors_in[v + 1];
+		Vec3 c0 = colors_in[e_index0];
+		Vec3 c1 = colors_in[e_index1];
 
 		// edge linear factors
 		const float dy = p1.y - p0.y;
@@ -363,55 +378,189 @@ Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint
 		const float const_factor = p0.y - slope * p0.x;
 
 		// check special cases
-		const uint32_t is_edge_vertical = !isfinite(slope);
+		const uint32_t is_edge_vertical   = !isfinite(slope);
 		const uint32_t is_edge_horizontal = (fabs(dy) < EPSILON_FLOAT);
 
+		// edges outcodes
+		const uint32_t left_edge   = 0x1;
+		const uint32_t right_edge  = 0x2;
+		const uint32_t bottom_edge = 0x4;
+		const uint32_t top_edge	   = 0x8;
+
 		// clip aginst rectangle
-		if (!is_edge_horizontal & !is_edge_vertical)
+		if (!is_edge_horizontal && !is_edge_vertical)
 		{
-			if (0x1 & vertices_outcode[v] /*left*/)
+			// left edge
+			if (left_edge & vertices_outcode[e_index0])
 			{
 				p0.x = rect_x_min;
 				p0.y = slope * rect_x_min + const_factor;
 			}
-			if (0x2 & vertices_outcode[v] /*right*/)
+			if (left_edge & vertices_outcode[e_index1])
+			{
+				p1.x = rect_x_min;
+				p1.y = slope * rect_x_min + const_factor;
+			}
+
+			// right edge
+			if (right_edge & vertices_outcode[e_index0])
+			{
+				p0.x = rect_x_max;
+				p0.y = slope * rect_x_max + const_factor;
+			}
+			if (right_edge & vertices_outcode[e_index1])
 			{
 				p1.x = rect_x_max;
 				p1.y = slope * rect_x_max + const_factor;
 			}
-			if (0x4 & vertices_outcode[v] /*bottom*/)
+
+			// bottom edge
+			if (bottom_edge & vertices_outcode[e_index0])
 			{
 				p0.x = (rect_y_min - const_factor) / slope;
 				p0.y = rect_y_min;
 			}
-			if (0x8 & vertices_outcode[v] /*top*/)
+			if (bottom_edge & vertices_outcode[e_index1])
+			{
+				p1.x = (rect_y_min - const_factor) / slope;
+				p1.y = rect_y_min;
+			}
+
+			// top edge
+			if (top_edge & vertices_outcode[e_index0])
+			{
+				p0.x = (rect_y_max - const_factor) / slope;
+				p0.y = rect_y_max;
+			}
+			if (top_edge & vertices_outcode[e_index1])
 			{
 				p1.x = (rect_y_max - const_factor) / slope;
 				p1.y = rect_y_max;
 			}
 		}
+		else if (is_edge_horizontal)
+		{
+			// left edge
+			if (left_edge & vertices_outcode[e_index0])
+			{
+				p0.x = rect_x_min;
+			}
+			if (left_edge & vertices_outcode[e_index1])
+			{
+				p1.x = rect_x_min;
+			}
 
-		// position
-		vertices_out[n_vertices_out] = p0;
-		vertices_out[n_vertices_out + 1u] = p1;
+			// right edge
+			if (right_edge & vertices_outcode[e_index0])
+			{
+				p0.x = rect_x_max;
+			}
+			if (right_edge & vertices_outcode[e_index1])
+			{
+				p1.x = rect_x_max;
+			}
 
-		// color
-		colors_out[n_vertices_out] = c0;
-		colors_out[n_vertices_out + 1u] = c1;
+			// bottom edge
+			if (bottom_edge & vertices_outcode[e_index0])
+			{
+				p0.y = rect_y_min;
+			}
+			if (bottom_edge & vertices_outcode[e_index1])
+			{
+				p1.y = rect_y_min;
+			}
 
-		// uv
+			// top edge
+			if (top_edge & vertices_outcode[e_index0])
+			{
+				p0.y = rect_y_max;
+			}
+			if (top_edge & vertices_outcode[e_index1])
+			{
+				p1.y = rect_y_max;
+			}
+		}
+		else if (is_edge_vertical)
+		{
+			// left edge
+			if (left_edge & vertices_outcode[e_index0])
+			{
+				p0.x = rect_x_min;
+			}
+			if (left_edge & vertices_outcode[e_index1])
+			{
+				p1.x = rect_x_min;
+			}
 
-		// depth
+			// right edge
+			if (right_edge & vertices_outcode[e_index0])
+			{
+				p0.x = rect_x_max;
+			}
+			if (right_edge & vertices_outcode[e_index1])
+			{
+				p1.x = rect_x_max;
+			}
 
-		n_vertices_out += 2;
+			// bottom edge
+			if (bottom_edge & vertices_outcode[e_index0])
+			{
+				p0.y = rect_y_min;
+			}
+			if (bottom_edge & vertices_outcode[e_index1])
+			{
+				p1.y = rect_y_min;
+			}
+
+			// top edge
+			if (top_edge & vertices_outcode[e_index0])
+			{
+				p0.y = rect_y_max;
+			}
+			if (top_edge & vertices_outcode[e_index1])
+			{
+				p1.y = rect_y_max;
+			}
+		}
+
+		// Do this vertex already exist in the buck?
+		if (!VertexAlreadyExist(vertices_out, &p0))
+		{
+			// position
+			vertices_out[n_vertices_out] = p0;
+
+			// color
+			colors_out[n_vertices_out] = c0;
+
+			// uv
+
+			// depth
+
+			n_vertices_out++;
+		}
+		
+		// Same as before, but now for the other end of the edge.
+		if (!VertexAlreadyExist(vertices_out, &p1))
+		{
+			// position
+			vertices_out[n_vertices_out] = p1;
+
+			// color
+			colors_out[n_vertices_out] = c1;
+
+			// uv
+
+			// depth
+
+			n_vertices_out++;
+		}
 	}
 
 	//
 	// triangulation
 	//
 
-	// any triangulation of a polygon with n vertices results in n - 2 triangles
-	// https://sites.cs.ucsb.edu/~suri/cs235/Triangulation.pdf
+	// any triangulation of a polygon with n vertices results in n - 2 triangles. See: https://sites.cs.ucsb.edu/~suri/cs235/Triangulation.pdf
 	*n_out_triangles = n_vertices_out - 2;
 
 	// fan triangulation algorithm (maybe improve this later?)
@@ -431,6 +580,8 @@ Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint
 		// uv coordinates
 
 		// depth
+
+		GenerateBoundingBoxForTriangle(&triangles_out[t]);
 	}
 
 
@@ -444,4 +595,15 @@ Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint
 	// 3 - return the new triangles
 
 	return triangles_out;
+}
+
+uint32_t VertexAlreadyExist(Vec2* vertices_buck, Vec2* curr_vertex)
+{
+	// Using a quick linear array as this is very small, in case it was big a hash map would be the way to go!
+	for (uint32_t v = 0u; v < MAX_VERTICES; ++v) {
+		if ((vertices_buck[v].x == curr_vertex->x) && (vertices_buck[v].y == curr_vertex->y))
+			return 1u;
+	}
+
+	return 0u;
 }
