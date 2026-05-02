@@ -37,6 +37,7 @@ extern uint32_t mem_offset_ptr;
 
 // enable clipping debugging functionality
 #if (1 && _DEBUG)
+#define DEBUG_EDGES
 #define DEBUG_CLIPPING_BOUNDS 
 #endif
 
@@ -136,11 +137,21 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 
 						// Raster the new triangles
 						RasterTriangle(sb, &clip_tri[tc], inv_tri_simd);
+#ifdef DEBUG_EDGES
+						draw_line_dda(clip_tri[tc].p0, clip_tri[tc].p1, 0x00FFFFFF, sb->surface_buffer, width);
+						draw_line_dda(clip_tri[tc].p1, clip_tri[tc].p2, 0x00FFFFFF, sb->surface_buffer, width);
+						draw_line_dda(clip_tri[tc].p2, clip_tri[tc].p0, 0x00FFFFFF, sb->surface_buffer, width);
+#endif
 					}
 				}
 
 				free(clip_tri);
 			}
+#ifdef DEBUG_EDGES
+			draw_line_dda(tri->p0, tri->p1, 0xFFFFFFFF, sb->surface_buffer, width);
+			draw_line_dda(tri->p1, tri->p2, 0xFFFFFFFF, sb->surface_buffer, width);
+			draw_line_dda(tri->p2, tri->p0, 0xFFFFFFFF, sb->surface_buffer, width);
+#endif
 		}
 	}
 

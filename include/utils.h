@@ -10,7 +10,7 @@
      - RASTER ENGINE					
 	===========================================================================
     
-    Copyright (C) 2023  Gabriel F. S. da Silva
+    Copyright (C) 2023-2026  Gabriel F. S. da Silva
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -45,9 +45,9 @@ typedef struct StarPolygon_t
 static inline uint32_t rgb_float_to_uint32(Vec3 color_rgb)
 {
     // ARGB
-    uint8_t r = (uint8_t)(color_rgb.x*0xFF);
-    uint8_t g = (uint8_t)(color_rgb.y*0xFF);
-    uint8_t b = (uint8_t)(color_rgb.z*0xFF);
+    uint8_t r = (uint8_t)(color_rgb.x * 0xFF);
+    uint8_t g = (uint8_t)(color_rgb.y * 0xFF);
+    uint8_t b = (uint8_t)(color_rgb.z * 0xFF);
 
     return (uint32_t)(0xFF << 24 | r << 16 | g << 8 | b);
 }
@@ -57,7 +57,7 @@ static inline uint32_t rgba_SIMD_float_to_uint32(__m128 color_rgba)
 {
     // Convert from float [0,1] to uint8 [0, 255] (Compression)
     __m128 rgba_white = _mm_set_ps(0xFF, 0xFF, 0xFF, 0xFF);
-    __m128i int_rgba = _mm_cvtps_epi32(_mm_mul_ps(color_rgba, rgba_white));
+    __m128i int_rgba  = _mm_cvtps_epi32(_mm_mul_ps(color_rgba, rgba_white));
 
     // Extract the channels from the SIMD register and compress it 
     // into a 32-bit unsigned RGBA integer
@@ -67,9 +67,9 @@ static inline uint32_t rgba_SIMD_float_to_uint32(__m128 color_rgba)
         _mm_cvtsi128_si32(_mm_srli_si128(int_rgba, 8)));       // Blue Chanell
 }
 
-static inline void draw_horizontal_line(uint32_t y, uint32_t x0, uint32_t x1, uint32_t argb_color, 
-    uint32_t width, uint32_t height, uint32_t* color_buffer)
-{
+static inline void draw_horizontal_line(uint32_t y, uint32_t x0, uint32_t x1, uint32_t argb_color, uint32_t width, 
+    uint32_t height, uint32_t* color_buffer)
+{ 
     assert(y < height && x0 < width && x1 < width && color_buffer);
     for (uint32_t i = 0u; i < (x1 - x0); ++i)
         color_buffer[y * width + (x0 + i)] = argb_color;
@@ -82,6 +82,32 @@ static inline void draw_vertical_line(uint32_t x, uint32_t y0, uint32_t y1, uint
     // DEBUG ONLY: Slow! we gonna miss some cache goodness on this one! aggahhh! :( 
     for (uint32_t i = 0u; i < (y1 - y0); ++i)
         color_buffer[((y0 + i) * width) + x] = argb_color;
+}
+
+static inline void draw_line_dda(Vec2 p0, Vec2 p1, uint32_t argb_color, uint32_t* color_buffer, uint32_t buffer_width)
+{
+
+    const uint32_t x0 = (uint32_t)p0.x;
+    const uint32_t y0 = (uint32_t)p0.y;
+    const uint32_t x1 = (uint32_t)p1.x;
+
+    const float slope = (p1.y - p0.y) / (p1.x - p0.x);
+    const int32_t x_incr = (p1.x - p0.x) > 0.0f ? 1 : -1;
+    const uint32_t x_delta = (uint32_t)abs(p1.x - p0.x);
+
+
+    float x = p0.x;
+    float y = p0.y;
+
+    for (uint32_t i = 0u; i < x_delta; ++i) {
+        uint32_t xi = (uint32_t)x;
+        uint32_t yi = (uint32_t)y;
+
+        color_buffer[yi * buffer_width + xi] = argb_color;
+
+        x += x_incr;
+        y += slope;
+    }
 }
 
 #endif /* INCLUDE_UTILS_H_ */
