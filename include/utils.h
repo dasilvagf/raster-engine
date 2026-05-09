@@ -67,46 +67,74 @@ static inline uint32_t rgba_SIMD_float_to_uint32(__m128 color_rgba)
         _mm_cvtsi128_si32(_mm_srli_si128(int_rgba, 8)));       // Blue Chanell
 }
 
-static inline void draw_horizontal_line(uint32_t y, uint32_t x0, uint32_t x1, uint32_t argb_color, uint32_t width, 
-    uint32_t height, uint32_t* color_buffer)
+static inline void draw_horizontal_line(uint32_t y, uint32_t x0, uint32_t x1, uint32_t argb_color, 
+    uint32_t buffer_width, uint32_t buffer_height, uint32_t* color_buffer)
 { 
-    assert(y < height && x0 < width && x1 < width && color_buffer);
+    assert(y < buffer_height && x0 < buffer_width && x1 < buffer_width && color_buffer);
+    
+    // the line can go in both directions: left and right
+    x0 = min(x0, x1);
+    x1 = max(x0, x1);
+
     for (uint32_t i = 0u; i < (x1 - x0); ++i)
-        color_buffer[y * width + (x0 + i)] = argb_color;
+        color_buffer[y * buffer_width + (x0 + i)] = argb_color;
 }
 
 static inline void draw_vertical_line(uint32_t x, uint32_t y0, uint32_t y1, uint32_t argb_color, 
-    uint32_t width, uint32_t height, uint32_t* color_buffer)
+    uint32_t buffer_width, uint32_t buffer_height, uint32_t* color_buffer)
 {
-    assert(x < width && y0 < height && y1 < height && color_buffer);
+    assert(x < buffer_width && y0 < buffer_height && y1 < buffer_height && color_buffer);
+
+    // the line can go in both directions: up and down
+    y0 = min(y0, y1);
+    y1 = max(y0, y1);
+
     // DEBUG ONLY: Slow! we gonna miss some cache goodness on this one! aggahhh! :( 
     for (uint32_t i = 0u; i < (y1 - y0); ++i)
-        color_buffer[((y0 + i) * width) + x] = argb_color;
+        color_buffer[((y0 + i) * buffer_width) + x] = argb_color;
 }
 
-static inline void draw_line_dda(Vec2 p0, Vec2 p1, uint32_t argb_color, uint32_t* color_buffer, uint32_t buffer_width)
+static inline void draw_line_dda(Vec2 p0, Vec2 p1, uint32_t argb_color, 
+    uint32_t buffer_width, uint32_t buffer_height, uint32_t* color_buffer)
 {
-
     const uint32_t x0 = (uint32_t)p0.x;
     const uint32_t y0 = (uint32_t)p0.y;
     const uint32_t x1 = (uint32_t)p1.x;
+    const uint32_t y1 = (uint32_t)p1.y;
 
-    const float slope = (p1.y - p0.y) / (p1.x - p0.x);
-    const int32_t x_incr = (p1.x - p0.x) > 0.0f ? 1 : -1;
-    const uint32_t x_delta = (uint32_t)abs(p1.x - p0.x);
+    assert(color_buffer);
+    assert(x0 < buffer_width  && x1 < buffer_width);
+    assert(y0 < buffer_height && y1 < buffer_height);
 
+    const float dy = p1.y - p0.y;
+    const float dx = p1.x - p0.x;
+    const float slope = dy / dx;
+
+    const uint32_t x_delta = (uint32_t)fabs(dx);
+    const int32_t  x_incr  = (dx) > 0.0f ? 1 : -1;
+
+    // check special cases
+    const uint32_t is_edge_vertical = !isfinite(slope);
+    const uint32_t is_edge_horizontal = (fabs(dy) < EPSILON_FLOAT);
 
     float x = p0.x;
     float y = p0.y;
 
-    for (uint32_t i = 0u; i < x_delta; ++i) {
-        uint32_t xi = (uint32_t)x;
-        uint32_t yi = (uint32_t)y;
+    if (is_edge_vertical)
+        draw_vertical_line((uint32_t)x, y0, y1, argb_color, buffer_width, buffer_height, color_buffer);
+    else if (is_edge_horizontal)
+        draw_horizontal_line((uint32_t)y, x0, x1, argb_color, buffer_width, buffer_height, color_buffer);
+    else
+    {
+        for (uint32_t i = 0u; i < x_delta; ++i) {
+            uint32_t xi = (uint32_t)x;
+            uint32_t yi = (uint32_t)y;
 
-        color_buffer[yi * buffer_width + xi] = argb_color;
+            color_buffer[yi * buffer_width + xi] = argb_color;
 
-        x += x_incr;
-        y += slope;
+            x += x_incr;
+            y += slope;
+        }
     }
 }
 

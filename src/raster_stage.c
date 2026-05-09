@@ -90,6 +90,11 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 				_mm_storeu_si128((__m128i*)&sb->surface_buffer[i*width + j], 
 				_mm_setzero_si128());
 
+#ifdef DEBUG_EDGES
+	Triangle* debug_clip_tris	= NULL;
+	uint32_t  debug_n_clip_tris	= 0u;
+#endif
+
 	// for each of our triangles
 	for (uint32_t t = 0u; t < tb_size; ++t){
 		Triangle* tri = &tb[t];
@@ -117,9 +122,11 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			uint32_t is_inside = !((outcode_p0 | outcode_p1) || (outcode_p1 | outcode_p2) || (outcode_p2 | outcode_p0));
 			uint32_t is_outside = ((outcode_p0 & outcode_p1) && (outcode_p1 & outcode_p2) && (outcode_p2 & outcode_p0));
 
-			// no need to clip or generate new triangles, thus we just render the original triangle
+			// no need to clip! just render the triangle
 			if (is_inside)
+			{
 				RasterTriangle(sb, tri, inv_tri_simd);
+			}
 			// if the triangle isn't outside we gonna need to clip it! :( [SLOW]
 			else if (!is_outside)
 			{
@@ -137,30 +144,45 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 
 						// Raster the new triangles
 						RasterTriangle(sb, &clip_tri[tc], inv_tri_simd);
-#ifdef DEBUG_EDGES
-						draw_line_dda(clip_tri[tc].p0, clip_tri[tc].p1, 0x00FFFFFF, sb->surface_buffer, width);
-						draw_line_dda(clip_tri[tc].p1, clip_tri[tc].p2, 0x00FFFFFF, sb->surface_buffer, width);
-						draw_line_dda(clip_tri[tc].p2, clip_tri[tc].p0, 0x00FFFFFF, sb->surface_buffer, width);
-#endif
 					}
 				}
 
-				free(clip_tri);
-			}
 #ifdef DEBUG_EDGES
-			draw_line_dda(tri->p0, tri->p1, 0xFFFFFFFF, sb->surface_buffer, width);
-			draw_line_dda(tri->p1, tri->p2, 0xFFFFFFFF, sb->surface_buffer, width);
-			draw_line_dda(tri->p2, tri->p0, 0xFFFFFFFF, sb->surface_buffer, width);
+				debug_clip_tris   = clip_tri;
+				debug_n_clip_tris = n_clip_tri;
+#else
+				free(clip_tri);
 #endif
+			}
 		}
 	}
 
-	// Draw viewport only if we are debugging clipping functionality
+	// draw edges only if we are debugging edges functionality
+#ifdef DEBUG_EDGES
+
+	// main triangles
+	for (uint32_t tc = 0u; tc < tb_size; ++tc){
+		draw_line_dda(tb[tc].p0, tb[tc].p1, 0x00FFFFFF, width, height, sb->surface_buffer);
+		draw_line_dda(tb[tc].p1, tb[tc].p2, 0x00FFFFFF, width, height, sb->surface_buffer);
+		draw_line_dda(tb[tc].p2, tb[tc].p0, 0x00FFFFFF, width, height, sb->surface_buffer);
+	}
+
+	// clipping sub-triangles
+	for (uint32_t tc = 0u; tc < debug_n_clip_tris; ++tc) {
+		draw_line_dda(debug_clip_tris[tc].p0, debug_clip_tris[tc].p1, 0x00FFFFFF, width, height, sb->surface_buffer);
+		draw_line_dda(debug_clip_tris[tc].p1, debug_clip_tris[tc].p2, 0x00FFFFFF, width, height, sb->surface_buffer);
+		draw_line_dda(debug_clip_tris[tc].p2, debug_clip_tris[tc].p0, 0x00FFFFFF, width, height, sb->surface_buffer);
+	}
+
+	free(debug_clip_tris);
+#endif
+
+	// draw viewport only if we are debugging clipping functionality
 #ifdef DEBUG_CLIPPING_BOUNDS
-	draw_horizontal_line(CLIP_OFFSET, CLIP_OFFSET, width - CLIP_OFFSET, 0xFFFF0000, width, height, sb->surface_buffer);
-	draw_horizontal_line(height - CLIP_OFFSET, CLIP_OFFSET, width - CLIP_OFFSET, 0xFFFF0000, width, height, sb->surface_buffer);
-	draw_vertical_line(CLIP_OFFSET, CLIP_OFFSET, height - CLIP_OFFSET, 0xFFFF0000, width, height, sb->surface_buffer);
-	draw_vertical_line(width - CLIP_OFFSET, CLIP_OFFSET, height - CLIP_OFFSET, 0xFFFF0000, width, height, sb->surface_buffer);
+	draw_horizontal_line(CLIP_OFFSET, CLIP_OFFSET, width - CLIP_OFFSET, 0xFFFFFF00, width, height, sb->surface_buffer);
+	draw_horizontal_line(height - CLIP_OFFSET, CLIP_OFFSET, width - CLIP_OFFSET, 0xFFFFFF00, width, height, sb->surface_buffer);
+	draw_vertical_line(CLIP_OFFSET, CLIP_OFFSET, height - CLIP_OFFSET, 0xFFFFFF00, width, height, sb->surface_buffer);
+	draw_vertical_line(width - CLIP_OFFSET, CLIP_OFFSET, height - CLIP_OFFSET, 0xFFFFFF00, width, height, sb->surface_buffer);
 #endif
 }
 
