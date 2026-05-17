@@ -32,7 +32,7 @@
 #include <Windows.h>
 #include <xmmintrin.h>
 
-#include "utils.h"
+#include "raster_utils.h"
 
 //
 //			Windows Init/SetUp

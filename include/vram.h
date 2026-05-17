@@ -29,7 +29,7 @@
 #ifndef INCLUDE_VRAM_H_
 #define INCLUDE_VRAM_H_
 
-#include "utils.h"
+#include "raster_utils.h"
 
 #define VRAM_MAX_SIZE 1024u * 1024u * 1024u // 1GB
 #define CLEAR_VRAM_OFFSET 0u

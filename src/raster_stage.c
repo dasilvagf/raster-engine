@@ -39,6 +39,7 @@ extern uint32_t mem_offset_ptr;
 #if (1 && _DEBUG)
 #define DEBUG_EDGES
 #define DEBUG_CLIPPING_BOUNDS 
+#define DEBUG_TRIANGLE_STATISTICS
 #endif
 
 #ifdef DEBUG_CLIPPING_BOUNDS
@@ -126,6 +127,9 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 			if (is_inside)
 			{
 				RasterTriangle(sb, tri, inv_tri_simd);
+#ifdef DEBUG_TRIANGLE_STATISTICS
+				print_triangle_debug_statistics(tri, t, 0u);
+#endif
 			}
 			// if the triangle isn't outside we gonna need to clip it! :( [SLOW]
 			else if (!is_outside)
@@ -144,6 +148,9 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 
 						// Raster the new triangles
 						RasterTriangle(sb, &clip_tri[tc], inv_tri_simd);
+#ifdef DEBUG_TRIANGLE_STATISTICS
+						print_triangle_debug_statistics(&clip_tri[tc], tc, 1u);
+#endif
 					}
 				}
 
