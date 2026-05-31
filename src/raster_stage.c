@@ -66,7 +66,7 @@ void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri
 // clip those triangles which witnessed too much - muhahaha (search for The Silence of the Clamps if you didn't got the joke!) 
 Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint32_t shuterland_outcodes[3], uint32_t* n_out_triangles);
 
-// Remove repated Vertices from Polygon
+// Remove repeated Vertices from Polygon
 uint32_t VertexAlreadyExist(Vec2* vertices_buck, Vec2* curr_vertex);
 
 void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
@@ -169,16 +169,16 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 
 	// main triangles
 	for (uint32_t tc = 0u; tc < tb_size; ++tc){
-		draw_line_dda(tb[tc].p0, tb[tc].p1, 0x00FFFFFF, width, height, sb->surface_buffer);
-		draw_line_dda(tb[tc].p1, tb[tc].p2, 0x00FFFFFF, width, height, sb->surface_buffer);
-		draw_line_dda(tb[tc].p2, tb[tc].p0, 0x00FFFFFF, width, height, sb->surface_buffer);
+		draw_debug_line_dda(tb[tc].p0, tb[tc].p1, 0x00FFFFFF, width, height, sb->surface_buffer);
+		draw_debug_line_dda(tb[tc].p1, tb[tc].p2, 0x00FFFFFF, width, height, sb->surface_buffer);
+		draw_debug_line_dda(tb[tc].p2, tb[tc].p0, 0x00FFFFFF, width, height, sb->surface_buffer);
 	}
 
 	// clipping sub-triangles
 	for (uint32_t tc = 0u; tc < debug_n_clip_tris; ++tc) {
-		draw_line_dda(debug_clip_tris[tc].p0, debug_clip_tris[tc].p1, 0x00FFFFFF, width, height, sb->surface_buffer);
-		draw_line_dda(debug_clip_tris[tc].p1, debug_clip_tris[tc].p2, 0x00FFFFFF, width, height, sb->surface_buffer);
-		draw_line_dda(debug_clip_tris[tc].p2, debug_clip_tris[tc].p0, 0x00FFFFFF, width, height, sb->surface_buffer);
+		draw_debug_line_dda(debug_clip_tris[tc].p0, debug_clip_tris[tc].p1, 0x00FFFFFF, width, height, sb->surface_buffer);
+		draw_debug_line_dda(debug_clip_tris[tc].p1, debug_clip_tris[tc].p2, 0x00FFFFFF, width, height, sb->surface_buffer);
+		draw_debug_line_dda(debug_clip_tris[tc].p2, debug_clip_tris[tc].p0, 0x00FFFFFF, width, height, sb->surface_buffer);
 	}
 
 	free(debug_clip_tris);
@@ -286,7 +286,7 @@ void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri
 	__m128 green   = _mm_load_ps(c_g);
 	__m128 blue    = _mm_load_ps(c_b);
 	
-	// rasterizer inside the bounding-box
+	// rasterize inside the bounding-box
 	for (uint32_t i = y_max; i > y_min; i--) {
 		for (uint32_t j = x_min; j < x_max; j++) {
 			//
@@ -341,7 +341,7 @@ void __forceinline RasterTriangle(SurfaceBuffer* sb, Triangle* tb, float inv_tri
 			curr_e = _mm_add_ps(curr_e, const_a);
 
 			//
-			// check if the pixels passed in one of the two tests (edge or insde)
+			// check if the pixels passed in one of the two tests (edge or inside)
 			//
 			int32_t edge_mask = _mm_movemask_ps(mask_inside);
 			int32_t rasterize = (edge_mask & 0x1 && edge_mask & 0x2 && edge_mask & 0x4) || _mm_movemask_ps(mask_edge);
@@ -421,13 +421,13 @@ Triangle* ClipTriangle(struct clip_rectangle_t* clip_rect, Triangle* in_tb, uint
 		const uint32_t is_edge_vertical   = !isfinite(slope);
 		const uint32_t is_edge_horizontal = (fabs(dy) < EPSILON_FLOAT);
 
-		// edges outcodes
+		// edges out-codes
 		const uint32_t left_edge   = 0x1;
 		const uint32_t right_edge  = 0x2;
 		const uint32_t bottom_edge = 0x4;
 		const uint32_t top_edge	   = 0x8;
 
-		// clip aginst rectangle
+		// clip against rectangle
 		if (!is_edge_horizontal && !is_edge_vertical)
 		{
 			// left edge

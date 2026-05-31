@@ -66,7 +66,7 @@ static inline uint32_t rgba_SIMD_float_to_uint32(__m128 color_rgba)
     return (uint32_t)(0xFF << 24 | 
         _mm_cvtsi128_si32(_mm_srli_si128(int_rgba, 0)) << 16 | // Red Channel
         _mm_cvtsi128_si32(_mm_srli_si128(int_rgba, 4)) << 8  | // Green Channel
-        _mm_cvtsi128_si32(_mm_srli_si128(int_rgba, 8)));       // Blue Chanell
+        _mm_cvtsi128_si32(_mm_srli_si128(int_rgba, 8)));       // Blue Channel
 }
 
 static inline void draw_horizontal_line(uint32_t y, uint32_t x0, uint32_t x1, uint32_t argb_color, 
@@ -79,7 +79,7 @@ static inline void draw_horizontal_line(uint32_t y, uint32_t x0, uint32_t x1, ui
     x1 = max(x0, x1);
 
     for (uint32_t i = 0u; i < (x1 - x0); ++i)
-        color_buffer[y * buffer_width + (x0 + i)] = argb_color;
+        color_buffer[(buffer_height - y) * buffer_width + (x0 + i)] = argb_color;
 }
 
 static inline void draw_vertical_line(uint32_t x, uint32_t y0, uint32_t y1, uint32_t argb_color, 
@@ -93,10 +93,10 @@ static inline void draw_vertical_line(uint32_t x, uint32_t y0, uint32_t y1, uint
 
     // DEBUG ONLY: Slow! we gonna miss some cache goodness on this one! aggahhh! :( 
     for (uint32_t i = 0u; i < (y1 - y0); ++i)
-        color_buffer[((y0 + i) * buffer_width) + x] = argb_color;
+        color_buffer[((buffer_height - (y0 + i)) * buffer_width) + x] = argb_color;
 }
 
-static inline void draw_line_dda(Vec2 p0, Vec2 p1, uint32_t argb_color, 
+static inline void draw_debug_line_dda(Vec2 p0, Vec2 p1, uint32_t argb_color, 
     uint32_t buffer_width, uint32_t buffer_height, uint32_t* color_buffer)
 {
     const uint32_t x0 = (uint32_t)p0.x;
@@ -128,15 +128,17 @@ static inline void draw_line_dda(Vec2 p0, Vec2 p1, uint32_t argb_color,
         draw_horizontal_line((uint32_t)y, x0, x1, argb_color, buffer_width, buffer_height, color_buffer);
     else
     {
+        /*
         for (uint32_t i = 0u; i < x_delta; ++i) {
             uint32_t xi = (uint32_t)x;
             uint32_t yi = (uint32_t)y;
 
-            color_buffer[yi * buffer_width + xi] = argb_color;
+            color_buffer[(buffer_height - yi) * buffer_width + xi] = argb_color;
 
             x += x_incr;
             y += slope;
         }
+        */
     }
 }
 
