@@ -87,6 +87,7 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	LoadVerticesDataFromDisk("dummy.obj", &input_vertices);
 	assert(input_vertices);
 
+	uint32_t has_data_changed = 0u;
 	while(running)
 	{
 		t0 = t1;
@@ -111,6 +112,8 @@ int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 						 dy = delta;
 					 else if (msg.wParam == VK_DOWN)
 						 dy = -delta;
+
+					 has_data_changed = 1u;
 				 }
 			 default:
 				{

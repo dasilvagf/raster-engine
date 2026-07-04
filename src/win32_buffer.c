@@ -35,7 +35,7 @@
 #include "../include/win32_buffer.h"
 
 //
-//			Window Initialisation & SetUp
+//			Window Initialization & SetUp
 //
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -118,6 +118,10 @@ SurfaceBuffer* InitWin32(uint32_t width, uint32_t height, HINSTANCE hinstance)
 	sb->bminfo.bmiHeader = bmh;
 	sb->hwnd = hwnd;
 
+#ifdef _DEBUG
+	OpenLogConsole();
+#endif
+
 	return sb;
 }
 
@@ -130,4 +134,8 @@ void CloseWin32(SurfaceBuffer* sb)
 
 		free(sb);
 	}
+
+#ifdef _DEBUG
+	CloseLogConsole();
+#endif
 }

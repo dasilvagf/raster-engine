@@ -142,72 +142,46 @@ static inline void draw_debug_line_dda(Vec2 p0, Vec2 p1, uint32_t argb_color,
     }
 }
 
-static inline void print_triangle_debug_statistics(const Triangle* tri, uint32_t tri_index, uint8_t is_clipped)
+static inline void print_triangle_debug_statistics(const Triangle* main_tri, const Triangle* clipped_tri, 
+    uint32_t main_triangle_index, uint32_t clipped_tri_size)
 {
-    static char debug_string[256];
+    printf("=====================================================================\n");
+    printf("MAIN TRIANGLE %d\n", main_triangle_index);
 
-    sprintf(debug_string, "=====================================================================\n");
-    OutputDebugStringA(debug_string);
+    printf("\tVertex 0:\n");
+    printf("\t\tpos(%f,%f)\n", main_tri->p0.x, main_tri->p0.y);
 
-    if (!is_clipped)
-        sprintf(debug_string, "DEBUG TRIANGLE %d\n", tri_index);
-    else
-        sprintf(debug_string, "DEBUG CLIPPED SUB-TRIANGLE %d\n", tri_index);
+    printf("\tVertex 1:\n");
+    printf("\t\tpos(%f,%f)\n", main_tri->p1.x, main_tri->p1.y);
 
-    OutputDebugStringA(debug_string);
+    printf("\tVertex 2:\n");
+    printf("\t\tpos(%f,%f)\n\n", main_tri->p2.x, main_tri->p2.y);
 
-    sprintf(debug_string, "\tVertex 0:\n");
-    OutputDebugStringA(debug_string);
+    printf("\tArea(p0, p1, p2): %f\n", fabs(OrientedTriangleArea(main_tri->p0, main_tri->p1, main_tri->p2)));
 
-    sprintf(debug_string, "\t\tpos(%f,%f)\n", tri->p0.x, tri->p0.y);
-    OutputDebugStringA(debug_string);
+    /*
+    if (!is_clipped) p
+    else             printf("DEBUG CLIPPED SUB-TRIANGLE %d\n", tri_index);
+    */
+    
+    /*
+    printf("\tVertex 0:\n");
+    printf("\t\tpos(%f,%f)\n",    tri->p0.x , tri->p0.y);
 
-    sprintf(debug_string, "\t\ttex(%f,%f)\n", tri->uv0.x, tri->uv0.y);
-    OutputDebugStringA(debug_string);
+    printf("\tVertex 1:\n");
+    printf("\t\tpos(%f,%f)\n",    tri->p1.x,  tri->p1.y);
 
-    sprintf(debug_string, "\t\tcol(%f,%f,%f)\n", tri->c0.x, tri->c0.y, tri->c0.z);
-    OutputDebugStringA(debug_string);
+    printf("\tVertex 2:\n");
+    printf("\t\tpos(%f,%f)\n\n", tri->p2.x, tri->p2.y);
 
+    printf("\tEdge 0: p0(%f,%f) -> p1(%f, %f)\n", tri->p0.x, tri->p0.y, tri->p1.x, tri->p1.y);
+    printf("\tEdge 1: p1(%f,%f) -> p2(%f, %f)\n", tri->p1.x, tri->p1.y, tri->p2.x, tri->p2.y);
+    printf("\tEdge 2: p2(%f,%f) -> p0(%f, %f)\n", tri->p2.x, tri->p2.y, tri->p0.x, tri->p0.y);
 
-    sprintf(debug_string, "\tVertex 1:\n");
-    OutputDebugStringA(debug_string);
+    const float tri_area = fabs(OrientedTriangleArea(tri->p0, tri->p1, tri->p2));
+    printf("\tArea(p0, p1, p2): %f\n", tri_area); */
 
-    sprintf(debug_string, "\t\tpos(%f,%f)\n", tri->p1.x, tri->p1.y);
-    OutputDebugStringA(debug_string);
-
-    sprintf(debug_string, "\t\ttex(%f,%f)\n", tri->uv1.x, tri->uv1.y);
-    OutputDebugStringA(debug_string);
-
-    sprintf(debug_string, "\t\tcol(%f,%f,%f)\n", tri->c1.x, tri->c1.y, tri->c1.z);
-    OutputDebugStringA(debug_string);
-
-
-    sprintf(debug_string, "\tVertex 2:\n");
-    OutputDebugStringA(debug_string);
-
-    sprintf(debug_string, "\t\tpos(%f,%f)\n", tri->p2.x, tri->p2.y);
-    OutputDebugStringA(debug_string);
-
-    sprintf(debug_string, "\t\ttex(%f,%f)\n", tri->uv2.x, tri->uv2.y);
-    OutputDebugStringA(debug_string);
-
-    sprintf(debug_string, "\t\tcol(%f,%f,%f)\n", tri->c2.x, tri->c2.y, tri->c2.z);
-    OutputDebugStringA(debug_string);
-
-    //sprintf(debug_string, "\tArea(p0, p1, p2): %f\n", tri_area2 / 2.0f);
-    //OutputDebugStringA(debug_string);
-
-    sprintf(debug_string, "\tEdge 0: p0(%f,%f) -> p1(%f, %f)\n", tri->p0.x, tri->p0.y, tri->p1.x, tri->p1.y);
-    OutputDebugStringA(debug_string);
-
-    sprintf(debug_string, "\tEdge 1: p1(%f,%f) -> p2(%f, %f)\n", tri->p1.x, tri->p1.y, tri->p2.x, tri->p2.y);
-    OutputDebugStringA(debug_string);
-
-    sprintf(debug_string, "\tEdge 2: p2(%f,%f) -> p0(%f, %f)\n", tri->p2.x, tri->p2.y, tri->p0.x, tri->p0.y);
-    OutputDebugStringA(debug_string);
-
-    sprintf(debug_string, "=====================================================================\n");
-    OutputDebugStringA(debug_string);
+    printf("=====================================================================\n");
 }
 
 #endif /* INCLUDE_RASTER_UTILS_H_ */

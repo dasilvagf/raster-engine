@@ -35,11 +35,12 @@ static float* g_depth_buffer = NULL;
 extern uint8_t* VERTEX_GPU_VRAM;
 extern uint32_t mem_offset_ptr;
 
-// enable clipping debugging functionality
-#if (1 && _DEBUG)
+// enable debugging functionality
+#if (_DEBUG)
 #define DEBUG_EDGES
 #define DEBUG_CLIPPING_BOUNDS 
-#define DEBUG_TRIANGLE_STATISTICS
+//#define DEBUG_TRIANGLE_STATS
+#define DEBUG_CLIPPED_TRIANGLE_STATS
 #endif
 
 #ifdef DEBUG_CLIPPING_BOUNDS
@@ -140,7 +141,7 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 				Triangle* clip_tri = ClipTriangle(&clip_rect, tri, outcodes, &n_clip_tri);
 
 				for (uint32_t tc = 0u; tc < n_clip_tri; ++tc) {
-					// triangle area (multipled by 2)
+					// triangle area (multiplied by 2)
 					tri_area2 = OrientedArea(clip_tri[tc].p0, clip_tri[tc].p1, clip_tri[tc].p2);
 					if (tri_area2 > 0.0f)
 					{
@@ -148,11 +149,12 @@ void RasterTriangles(SurfaceBuffer* sb, Triangle* tb, uint32_t tb_size)
 
 						// Raster the new triangles
 						RasterTriangle(sb, &clip_tri[tc], inv_tri_simd);
-#ifdef DEBUG_TRIANGLE_STATISTICS
-						print_triangle_debug_statistics(&clip_tri[tc], tc, 1u);
-#endif
 					}
 				}
+
+#ifdef DEBUG_CLIPPED_TRIANGLE_STATS
+				print_triangle_debug_statistics(tri, clip_tri, t, n_clip_tri);
+#endif
 
 #ifdef DEBUG_EDGES
 				debug_clip_tris   = clip_tri;

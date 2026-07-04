@@ -1,5 +1,5 @@
 /*
-	===========================================================================
+    ===========================================================================
                           _________
                          /\        \	created by
                         /  \        \			(GABRIEL ->
@@ -7,9 +7,9 @@
                        \    /        /          | /
                         \  /        /           |/___x
                          \/________/
-     - RASTER ENGINE					
-	===========================================================================
-    
+     - RASTER ENGINE
+    ===========================================================================
+
     Copyright (C) 2023  Gabriel F. S. da Silva
 
     This program is free software: you can redistribute it and/or modify
@@ -26,28 +26,12 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef INCLUDE_WIN32_BUFFER_H_
-#define INCLUDE_WIN32_BUFFER_H_
+#ifndef INCLUDE_WIN32_HEADER_H_
+#define INCLUDE_WIN32_HEADER_H_
 
-#include "win32/win32.h"
-#include "raster_utils.h"
+#include <Windows.h>
+#include <xmmintrin.h>
 
-//
-//			Windows Init/SetUp
-//
+#include "win32_utils.h"
 
-// Act as the SwapChain structure of Direct3D
-typedef struct SurfaceBuffer_t
-{
-	uint32_t width, height;
-	uint32_t* surface_buffer;
-
-	// Win32/GDI specific
-	HWND hwnd;
-	BITMAPINFO bminfo;
-}SurfaceBuffer;
-
-SurfaceBuffer* InitWin32(uint32_t width, uint32_t height, HINSTANCE hinstance);
-void CloseWin32(SurfaceBuffer* sb);
-
-#endif /* INCLUDE_WIN32_BUFFER_H_ */
+#endif

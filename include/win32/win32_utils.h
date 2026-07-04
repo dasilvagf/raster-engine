@@ -1,5 +1,5 @@
 /*
-	===========================================================================
+    ===========================================================================
                           _________
                          /\        \	created by
                         /  \        \			(GABRIEL ->
@@ -7,9 +7,9 @@
                        \    /        /          | /
                         \  /        /           |/___x
                          \/________/
-     - RASTER ENGINE					
-	===========================================================================
-    
+     - RASTER ENGINE
+    ===========================================================================
+
     Copyright (C) 2023  Gabriel F. S. da Silva
 
     This program is free software: you can redistribute it and/or modify
@@ -26,28 +26,31 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef INCLUDE_WIN32_BUFFER_H_
-#define INCLUDE_WIN32_BUFFER_H_
+#ifndef INCLUDE_WIN32_UTILS_H_
+#define INCLUDE_WIN32_UTILS_H_
 
-#include "win32/win32.h"
-#include "raster_utils.h"
+#include <stdio.h>
+#include <Windows.h>
+#include <xmmintrin.h>
 
-//
-//			Windows Init/SetUp
-//
-
-// Act as the SwapChain structure of Direct3D
-typedef struct SurfaceBuffer_t
+static void OpenLogConsole()
 {
-	uint32_t width, height;
-	uint32_t* surface_buffer;
+    if (AllocConsole())
+    {
+        FILE* fp = NULL;
 
-	// Win32/GDI specific
-	HWND hwnd;
-	BITMAPINFO bminfo;
-}SurfaceBuffer;
+        // Redirect both standard and error output to my log console
+        freopen_s(&fp, "CONOUT$", "w", stdout);
+        freopen_s(&fp, "CONOUT$", "w", stderr);
 
-SurfaceBuffer* InitWin32(uint32_t width, uint32_t height, HINSTANCE hinstance);
-void CloseWin32(SurfaceBuffer* sb);
+        SetConsoleTitleA("Raster Engine - Debug Console");
+        printf("Debug Console has been initialized...\n");
+    }
+}
 
-#endif /* INCLUDE_WIN32_BUFFER_H_ */
+static void CloseLogConsole()
+{
+    FreeConsole();
+}
+
+#endif
